@@ -1,0 +1,206 @@
+---
+title: "Untitled"
+format: html
+editor: visual
+---
+
+# Setting library
+
+```{r}
+library(tidyverse)
+library(moderndive)
+library(gapminder)
+library(sjPlot)
+library(stats)
+library(jtools)
+library(janitor)
+library(dplyr)
+library(GGally)
+library(ROCR)
+```
+
+# Data tidy
+
+```{r}
+datatest <- read.csv("C:\\Users\\10409\\Desktop\\Group29\\dataset29.csv")
+datatest <- as.data.frame(lapply(datatest, function(x) gsub(",","",x)))
+datatest <- datatest %>%
+  filter(across(everything(),~.!="?"))
+datatest$Age <- as.numeric(datatest$Age)
+datatest$Education <- as.factor(datatest$Education)
+datatest$Marital_Status <- as.factor(datatest$Marital_Status)
+datatest$Occupation <- as.factor(datatest$Occupation)
+datatest$Sex <- as.factor(datatest$Sex)
+datatest$Nationality <- as.factor(datatest$Nationality)
+datatest$Income <- as.factor(datatest$Income)
+datatest$Hours_PW <- as.numeric(datatest$Hours_PW)
+```
+
+Observe the correlation of the numeric of data:
+
+```{r}
+ggpairs(datatest[,c("Age","Hours_PW","Income")])
+```
+
+# Initial impression of the data
+
+## Age by Income
+
+```{r}
+ggplot(data=datatest,aes(x=Income,y=Age,fill=Income))+
+  geom_boxplot()+
+  labs(x="Whether larger than 50K",y="Age")+
+  theme(legend.position = "none")
+```
+
+## Education by Income
+
+```{r}
+datatest %>%
+  tabyl(Income,Education) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+ggplot(data=datatest,aes(x=Income,group=Education))+
+  geom_bar(aes(y=..prop..,fill=Education),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Martial_Status by Income
+
+```{r}
+datatest %>%
+  tabyl(Income,Marital_Status) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+ggplot(data=datatest,aes(x=Income,group=Marital_Status))+
+  geom_bar(aes(y=..prop..,fill=Marital_Status),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Occupation by Income
+
+```{r}
+datatest %>%
+  tabyl(Income,Occupation) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+ggplot(data=datatest,aes(x=Income,group=Occupation))+
+  geom_bar(aes(y=..prop..,fill=Occupation),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Sex by Income
+
+```{r}
+datatest %>%
+  tabyl(Income,Sex) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+ggplot(data=datatest,aes(x=Income,group=Sex))+
+  geom_bar(aes(y=..prop..,fill=Sex),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Hours_pw  by Income
+
+```{r}
+ggplot(data=datatest,aes(x=Income,y=Hours_PW,fill=Income))+
+  geom_boxplot()+
+  labs(x="Whether larger than 50K",y="Hours_PW")+
+  theme(legend.position = "none")
+```
+
+## Nationality by Income
+
+```{r}
+datatest %>%
+  tabyl(Income,Nationality) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+ggplot(data=datatest,aes(x=Income,group=Nationality))+
+  geom_bar(aes(y=..prop..,fill=Nationality),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+# Model selection 
+
+```{r}
+model_datatest <- glm(Income~Age+Education+Marital_Status+Occupation+Sex+Hours_PW+Nationality,data=datatest,family = binomial(link="logit"))
+model_datatest %>% summary()
+```
+
+```{r}
+model_datatest2 <- glm(Income~Age+Education+Marital_Status+Occupation+Hours_PW,data=datatest,family = binomial(link="logit"))
+model_datatest2 %>% summary()
+```
+
+Check the fitted of the model:
+
+```{r}
+qchisq(p=0.95,df=1351)
+```
+
+We can find it fitted well, the residual deviance of model2 is 998.6 which is lower than 1437.623.
+
+### Option choose of model 
+
+```{r}
+data.new <- datatest
+
+data.new$Education <- as.factor(ifelse(data.new$Education %in% c("1st-4th", "5th-6th", "7th-8th", "9th", "10th", "11th", "12th"), "Low_Education", as.character(data.new$Education)))
+
+data.new$Marital_Status <- as.factor(ifelse(data.new$Marital_Status %in% c("Married-spouse-absent", "Separated", "Widowed","Never-married"), "Other", as.character(data.new$Marital_Status)))
+
+data.new$Occupation <- as.factor(ifelse(data.new$Occupation %in% c("Craft-repair","Exec-managerial", "Handlers-cleaners", "Machine-op-inspct", "Priv-house-serv", "Protective-serv", "Sales", "Transport-moving"), "Other", as.character(data.new$Occupation)))
+
+model_new <- glm(Income ~ Age + Education + Marital_Status + Occupation + Hours_PW,data = data.new, family = binomial(link="logit"))
+summary(model_new)
+
+```
+
+## Odds of model 
+
+```{r}
+plot_model(model_datatest2, show.values = TRUE,
+           title = "", show.p = FALSE, value.offset = 0.5)
+```
+
+```{r}
+plot_model(model_new, show.values = TRUE,
+           title = "", show.p = FALSE, value.offset = 0.5)
+```
+
+## ROC curves
+
+```{r}
+predicted <- predict(model_datatest2,type = "response")
+predicted_class <- ifelse(predicted>0.5,">50k","<=50k")
+score <- prediction(predicted,datatest$Income)
+perf <- performance(score,"tpr","fpr")
+auc <- performance(score,"auc")
+perfd <- data.frame(x=perf@x.values[1][[1]],y=perf@y.values[1][[1]])
+ggplot(perfd,aes(x=x,y=y))+geom_line()+
+  xlab("False positive rate") + ylab("True positive rate") +
+  ggtitle(paste("Area under the curve:", round(auc@y.values[[1]], 3)))
+```
+
+Area under the curve is 0.882.
+
+```{r}
+predicted2 <- predict(model_new,type = "response")
+predicted_class2 <- ifelse(predicted2>0.5,">50k","<=50k")
+score2 <- prediction(predicted2,data.new$Income)
+perf2 <- performance(score2,"tpr","fpr")
+auc2 <- performance(score2,"auc")
+perfd2 <- data.frame(x=perf2@x.values[1][[1]],y=perf2@y.values[1][[1]])
+ggplot(perfd2,aes(x=x,y=y))+geom_line()+
+  xlab("False positive rate") + ylab("True positive rate") +
+  ggtitle(paste("Area under the curve:", round(auc2@y.values[[1]], 3)))
+```
+
+Area under the curve is 0.877.
