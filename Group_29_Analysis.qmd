@@ -1,0 +1,374 @@
+---
+title: "Analysis of individual earns"
+author: "Group 29"
+number-sections: true
+format:  
+  html:
+    embed-resources: true
+    code-tools: true
+    code-overflow: wrap
+  pdf: default
+editor_options: 
+  chunk_output_type: console
+execute:
+  echo: false
+  eval: true
+  warning: false
+  message: false
+output:
+  pdf_document:
+    keep_tex: false
+---
+
+```{r}
+#| label: libraries
+#| include: false
+library(tidyverse)
+library(MASS)
+library(detectseparation)
+library(logistf)
+library(arm)
+library(caret)
+library(ggplot2)
+library(glmnet)
+```
+
+```{r}
+#| label: data
+#| include: false
+data <- read.csv("dataset29.csv", header = TRUE, na.strings = c("?", " ", "","?,"))
+data <- data %>%
+  mutate(across(where(is.character), ~ gsub(",$", "", trimws(.))),
+         Income = factor(Income, levels = c("<=50K", ">50K")),
+         across(c(Education, Marital_Status, Occupation, Sex, Nationality), as.factor))
+data$Hours_PW <- as.numeric(data$Hours_PW)
+#delete NA items
+sum(is.na(data))
+data <- na.omit(data)
+
+
+
+
+```
+
+# Introduction
+
+**Dataset 29** were collected from the US 1994 Census database. This dataset contain data on individuals regarding their income level, and various socioeconomic factors. You will have access to the following variables:
+
+-   ​**Age** - The age of the individual in years\
+-   ​**Education** - Highest education level obtained by the individual\
+-   ​**Marital_Status** - The marital status of the individual\
+-   ​**Occupation** - The occupation of the individual\
+-   ​**Sex** - The sex of the individual\
+-   ​**Hours_Pw** - Number of hours worked per week by the individual\
+-   ​**Nationality** - The nationality of birth of the individual\
+-   ​**Income** - A factor variable with two levels: `>50k` if the individual earns more than \$50k per year, or `<=50k` if the individual earns less than or equal to \$50k per year
+
+------------------------------------------------------------------------
+
+## Task
+
+Imagine you have been tasked by the government to identify which features based on the census data impact the income an individual makes: - Which factors influence whether an individual earns more than \$50k per year?
+
+You should:
+
+1\. Conduct an analysis to answer your question using a ​**Generalised Linear Model (GLM)**\
+2. Summarise your results in the form of a presentation
+
+# Exploratory Data Analysis {#sec-EDA}
+
+Summary statistics of **Income** are presented in the following for each column separately.
+
+```{r}
+#| label: fig-all-data
+# 查看数据结构
+glimpse(data)
+
+# 查看收入分布
+ggplot(data, aes(Income)) + 
+  geom_bar() + 
+  labs(title = "Income Distribution")
+
+
+# 分类变量分布
+map(c("Sex","Education", "Occupation", "Marital_Status","Nationality"), ~{
+  ggplot(data, aes(.data[[.x]])) + 
+    geom_bar() + 
+    coord_flip()
+})
+
+
+# 绘制年龄分布直方图
+ggplot(data, aes(x = Age)) +
+  geom_histogram(
+    aes(y = after_stat(density)), # 转换为密度比例
+    bins = 20, 
+    fill = "skyblue", 
+    color = "white",
+    alpha = 0.7
+  ) +
+  geom_density(alpha = 0.2, color = "navy") + # 添加密度曲线
+  labs(
+    title = "Age Distribution",
+    x = "Age",
+    y = "Density"
+  ) 
+# 绘制每周小时分布直方图
+ggplot(data, aes(x = Hours_PW)) +
+  geom_histogram(
+    aes(y = after_stat(density)),
+    bins = 20,
+    fill = "salmon",
+    color = "white",
+    alpha = 0.7
+  ) +
+  geom_density(alpha = 0.2, color = "darkred") +
+  labs(
+    title = "Hours per Week Distribution",
+    x = "Hours per Week",
+    y = "Density"
+  ) 
+```
+
+```{r}
+#| label: plot-Income-Occupation
+#| fig-pos: h
+#| fig-cap: Income by Occupation.
+# Income~Occupation
+ggplot(data, aes(x = Income, fill = Occupation)) + 
+  geom_bar(position = "fill") + 
+  labs(x = "Income", y = "Occupation") +
+  coord_flip()
+```
+
+```{r}
+#| label: fig-Income-Education
+#| fig-pos: h
+#| fig-cap: Income by Education.
+# Income~Education
+ggplot(data, aes(x = Income, fill = Education)) + 
+  geom_bar(position = "fill") + 
+  labs(x = "Income", y = "Education") +
+  coord_flip()  
+table(data$Income)  
+```
+
+```{r}
+#| label: fig-Income-Marital_Status
+#| fig-pos: h
+#| fig-cap: Income by Marital_Status.
+# Income~Education
+ggplot(data, aes(x = Income, fill = Marital_Status)) + 
+  geom_bar(position = "fill") + 
+  labs(x = "Income", y = "Marital_Status") +
+  coord_flip()  
+table(data$Income)  
+```
+
+```{r}
+#| label: fig-Income-Sex
+#| fig-pos: h
+#| fig-cap: Income by Sex.
+# Income~Education
+ggplot(data, aes(x = Income, fill = Sex)) + 
+  geom_bar(position = "fill") + 
+  labs(x = "Income", y = "Sex") +
+  coord_flip()  
+table(data$Income)  
+```
+
+```{r}
+#| label: fig-Income-Nationality
+#| fig-pos: h
+#| fig-cap: Income by Nationality.
+# Income~Education
+ggplot(data, aes(x = Income, fill = Nationality)) + 
+  geom_bar(position = "fill") + 
+  labs(x = "Income", y = "Nationality") +
+  coord_flip()  
+table(data$Income)  
+```
+
+```{r}
+#| label: fig-Income-Age
+#| fig-pos: h
+#| fig-cap: Income by Age.
+ggplot(data, aes(x = Age, y = Income)) +
+  geom_boxplot() +
+  labs(x = "Age", y = "Income")
+```
+
+```{r}
+#| label: fig-Income-Hours_PW
+#| fig-pos: h
+#| fig-cap: Income by Hours_PW.
+ggplot(data, aes(x = Hours_PW, y = Income)) +
+  geom_boxplot() +
+  labs(x = "Hours_PW", y = "Income")
+```
+
+# Formal Data Analysis
+
+```{r}
+#| label: glm_model
+#| echo: false
+
+full_model <- glm(Income ~ Age + Education + Marital_Status + Occupation + Sex + Hours_PW + Nationality, family = binomial(link = "logit"), data = data)
+
+summary(full_model)
+
+#检查完全分离
+
+stepAIC_model <- stepAIC(
+  full_model,
+  direction = "both",   
+  trace = FALSE
+)
+
+summary(stepAIC_model)
+```
+
+```{r}
+#| label: logistf_model
+#| echo: false
+
+logistf_model <- logistf(Income ~ Age + Education + Marital_Status + Occupation + Hours_PW, data = data,family = binomial(link = "logit"))
+summary(logistf_model)
+
+```
+
+```{r}
+#| label: bayesglm_model
+#| echo: false
+bayesglm_model <- bayesglm(Income ~ Age + Education + Marital_Status + Occupation + Hours_PW, family = binomial, data = data)
+summary(bayesglm_model)
+```
+
+```{r}
+#| label: glmnet_lasso_model
+#| echo: false
+
+x <- model.matrix(Income ~ Age + Education + Marital_Status + Occupation + Hours_PW, data = data)[,-1]
+y <- data$Income
+cv_fit <- cv.glmnet(x, y, 
+                   family = "binomial",
+                   alpha = 1, 
+                   type.measure = "class")
+best_lambda <- cv_fit$lambda.min
+glmnet_lasso_model <- glmnet(x, y, 
+                     family = "binomial",
+                     alpha = 1,
+                     lambda = best_lambda)
+
+coef_matrix <- as.matrix(coef(glmnet_lasso_model))
+coef_df <- data.frame(
+  Variable = rownames(coef_matrix),
+  Coefficient = coef_matrix[,1]
+)
+coef_df <- coef_df[coef_df$Coefficient != 0 & coef_df$Variable != "(Intercept)", ]
+coef_df <- coef_df[order(-abs(coef_df$Coefficient)), ]
+print(coef_df)
+```
+
+```{r}
+#| label: glmnet_ridge_model
+#| echo: false
+
+x <- model.matrix(Income ~ Age + Education + Marital_Status + Occupation + Hours_PW, data = data)[,-1]
+y <- data$Income
+cv_fit <- cv.glmnet(x, y, 
+                   family = "binomial",
+                   alpha = 0, 
+                   type.measure = "class")
+best_lambda <- cv_fit$lambda.min
+glmnet_ridge_model <- glmnet(x, y, 
+                     family = "binomial",
+                     alpha = 0,
+                     lambda = best_lambda)
+
+coef_matrix <- as.matrix(coef(glmnet_ridge_model))
+coef_df <- data.frame(
+  Variable = rownames(coef_matrix),
+  Coefficient = coef_matrix[,1]
+)
+coef_df <- coef_df[coef_df$Coefficient != 0 & coef_df$Variable != "(Intercept)", ]
+coef_df <- coef_df[order(-abs(coef_df$Coefficient)), ]
+print(coef_df)
+
+```
+
+```{r}
+#| label: glmnet_elasticnet_model
+#| echo: false
+
+x <- model.matrix(Income ~ Age + Education + Marital_Status + Occupation + Hours_PW, data = data)[,-1]
+y <- data$Income
+cv_fit <- cv.glmnet(x, y, 
+                   family = "binomial",
+                   alpha = 0.5, 
+                   type.measure = "class")
+best_lambda <- cv_fit$lambda.min
+glmnet_elasticnet_model <- glmnet(x, y, 
+                     family = "binomial",
+                     alpha = 0.5,
+                     lambda = best_lambda)
+
+coef_matrix <- as.matrix(coef(glmnet_elasticnet_model))
+coef_df <- data.frame(
+  Variable = rownames(coef_matrix),
+  Coefficient = coef_matrix[,1]
+)
+coef_df <- coef_df[coef_df$Coefficient != 0 & coef_df$Variable != "(Intercept)", ]
+coef_df <- coef_df[order(-abs(coef_df$Coefficient)), ]
+print(coef_df)
+```
+
+```{r}
+#| label: check_models
+#| echo: false
+
+print("stepAIC_model")
+prob <- predict(stepAIC_model, newdata = data, type = "response")
+data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
+sum(data$check!=data$Income)
+print("error rate:")
+print(sum(data$check!=data$Income)/1385*100)
+
+print("logistf_model")
+prob <- predict(logistf_model, newdata = data, type = "response")
+data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
+sum(data$check!=data$Income)
+print("error rate:")
+print(sum(data$check!=data$Income)/1385*100)
+
+print("bayesglm_model")
+prob <- predict(bayesglm_model, newdata = data, type = "response")
+data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
+sum(data$check!=data$Income)
+print("error rate:")
+print(sum(data$check!=data$Income)/1385*100)
+
+print("glmnet_lasso_model")
+prob <- predict(glmnet_lasso_model, newx = x, type = "response")
+data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
+sum(data$check!=data$Income)
+print("error rate:")
+print(sum(data$check!=data$Income)/1385*100)
+
+
+print("glmnet_ridge_model")
+prob <- predict(glmnet_ridge_model, newx = x, type = "response")
+data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
+sum(data$check!=data$Income)
+print("error rate:")
+print(sum(data$check!=data$Income)/1385*100)
+
+print("glmnet_elasticnet_model")
+prob <- predict(glmnet_elasticnet_model, newx = x, type = "response")
+data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
+sum(data$check!=data$Income)
+print("error rate:")
+print(sum(data$check!=data$Income)/1385*100)
+```
+
+# Conclusions
