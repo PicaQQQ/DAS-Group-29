@@ -26,15 +26,23 @@ output:
 library(tidyverse)
 library(MASS)
 library(detectseparation)
-library(logistf)
 library(arm)
 library(caret)
 library(ggplot2)
 library(glmnet)
+library(moderndive)
+library(gapminder)
+library(sjPlot)
+library(stats)
+library(jtools)
+library(janitor)
+library(dplyr)
+library(GGally)
+library(ROCR)
 ```
 
 ```{r}
-#| label: data
+#| label: data_tidy
 #| include: false
 data <- read.csv("dataset29.csv", header = TRUE, na.strings = c("?", " ", "","?,"))
 data <- data %>%
@@ -45,10 +53,6 @@ data$Hours_PW <- as.numeric(data$Hours_PW)
 #delete NA items
 sum(is.na(data))
 data <- na.omit(data)
-
-
-
-
 ```
 
 # Introduction
@@ -79,66 +83,93 @@ You should:
 
 Summary statistics of **Income** are presented in the following for each column separately.
 
+Observe the correlation of the numeric of data:
+
 ```{r}
-#| label: fig-all-data
-# 查看数据结构
-glimpse(data)
+#| label: fig-Numeric-Data
+#| echo: false
+#| fig-cap: Numeric Data Correlation 
+ggpairs(data[,c("Age","Hours_PW","Income")])
+```
 
-# 查看收入分布
-ggplot(data, aes(Income)) + 
-  geom_bar() + 
-  labs(title = "Income Distribution")
+## Data levels
 
-
-# 分类变量分布
-map(c("Sex","Education", "Occupation", "Marital_Status","Nationality"), ~{
-  ggplot(data, aes(.data[[.x]])) + 
-    geom_bar() + 
-    coord_flip()
-})
-
-
-# 绘制年龄分布直方图
-ggplot(data, aes(x = Age)) +
-  geom_histogram(
-    aes(y = after_stat(density)), # 转换为密度比例
-    bins = 20, 
-    fill = "skyblue", 
-    color = "white",
-    alpha = 0.7
-  ) +
-  geom_density(alpha = 0.2, color = "navy") + # 添加密度曲线
-  labs(
-    title = "Age Distribution",
-    x = "Age",
-    y = "Density"
-  ) 
-# 绘制每周小时分布直方图
-ggplot(data, aes(x = Hours_PW)) +
-  geom_histogram(
-    aes(y = after_stat(density)),
-    bins = 20,
-    fill = "salmon",
-    color = "white",
-    alpha = 0.7
-  ) +
-  geom_density(alpha = 0.2, color = "darkred") +
-  labs(
-    title = "Hours per Week Distribution",
-    x = "Hours per Week",
-    y = "Density"
-  ) 
+```{r}
+#| label: data-levels
+#| echo: false
+levels(data$Education)
+levels(data$Marital_Status)
+levels(data$Occupation)
+levels(data$Sex)
+levels((data$Nationality))
 ```
 
 ```{r}
-#| label: plot-Income-Occupation
+#| label: fig-Income-Distribution
+#| echo: false
+#| fig-cap: Income Distribution.
+
+ggplot(data, aes(Income)) + 
+  geom_bar()
+```
+
+## Occupation by Income
+
+```{r}
+#| label: tbl-Occupation -Distribution
+#| tbl-cap: Occupation Distribution.
+
+data %>%
+  tabyl(Income,Occupation ) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+```
+
+```{r}
+#| label: fig-Occupation-Distribution
+#| fig-pos: h
+#| fig-cap: Occupation Distribution.
+
+ggplot(data, aes(x=Occupation)) + 
+    geom_bar() + 
+    coord_flip()
+```
+
+```{r}
+#| label: fig-Income-Occupation
 #| fig-pos: h
 #| fig-cap: Income by Occupation.
-# Income~Occupation
 ggplot(data, aes(x = Income, fill = Occupation)) + 
   geom_bar(position = "fill") + 
   labs(x = "Income", y = "Occupation") +
   coord_flip()
+ggplot(data=data,aes(x=Income,group=Occupation))+
+  geom_bar(aes(y=..prop..,fill=Occupation),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Education by Income
+
+```{r}
+#| label: tbl-Education-Distribution
+#| tbl-cap: Education Distribution.
+
+data %>%
+  tabyl(Income,Education) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+```
+
+```{r}
+#| label: fig-Education-Distribution
+#| fig-pos: h
+#| fig-cap: Education Distribution.
+
+ggplot(data, aes(x=Education)) + 
+    geom_bar() + 
+    coord_flip()
 ```
 
 ```{r}
@@ -150,31 +181,102 @@ ggplot(data, aes(x = Income, fill = Education)) +
   geom_bar(position = "fill") + 
   labs(x = "Income", y = "Education") +
   coord_flip()  
-table(data$Income)  
+ggplot(data=data,aes(x=Income,group=Education))+
+  geom_bar(aes(y=..prop..,fill=Education),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Martial_Status by Income
+
+```{r}
+#| label: tbl-Martial_Status -Distribution
+#| tbl-cap: Martial_Status  Distribution.
+
+data %>%
+  tabyl(Income,Marital_Status) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+```
+
+```{r}
+#| label: fig-Marital_Status-Distribution
+#| fig-pos: h
+#| fig-cap: Marital_Status Distribution.
+ggplot(data, aes(x=Marital_Status)) + 
+    geom_bar() + 
+    coord_flip()
 ```
 
 ```{r}
 #| label: fig-Income-Marital_Status
 #| fig-pos: h
 #| fig-cap: Income by Marital_Status.
-# Income~Education
 ggplot(data, aes(x = Income, fill = Marital_Status)) + 
   geom_bar(position = "fill") + 
   labs(x = "Income", y = "Marital_Status") +
   coord_flip()  
-table(data$Income)  
+ggplot(data=data,aes(x=Income,group=Marital_Status))+
+  geom_bar(aes(y=..prop..,fill=Marital_Status),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Sex by Income
+
+```{r}
+#| label: tbl-Sex-Distribution
+#| tbl-cap: Sex Distribution.
+
+data %>%
+  tabyl(Income,Sex) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+```
+
+```{r}
+#| label: fig-Sex-Distribution
+#| fig-pos: h
+#| fig-cap: Sex Distribution.
+ggplot(data, aes(x=Sex)) + 
+    geom_bar() + 
+    coord_flip()
 ```
 
 ```{r}
 #| label: fig-Income-Sex
 #| fig-pos: h
 #| fig-cap: Income by Sex.
-# Income~Education
+
 ggplot(data, aes(x = Income, fill = Sex)) + 
   geom_bar(position = "fill") + 
   labs(x = "Income", y = "Sex") +
   coord_flip()  
-table(data$Income)  
+ggplot(data=data,aes(x=Income,group=Sex))+
+  geom_bar(aes(y=..prop..,fill=Sex),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Nationality by Income
+
+```{r}
+#| label: tbl-Nationality-Distribution
+#| tbl-cap: Nationality Distribution.
+
+data %>%
+  tabyl(Income,Nationality) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+```
+
+```{r}
+#| label: fig-Nationality-Distribution
+#| fig-pos: h
+#| fig-cap: Nationality Distribution.
+ggplot(data, aes(x=Nationality)) + 
+    geom_bar() + 
+    coord_flip()
 ```
 
 ```{r}
@@ -186,7 +288,24 @@ ggplot(data, aes(x = Income, fill = Nationality)) +
   geom_bar(position = "fill") + 
   labs(x = "Income", y = "Nationality") +
   coord_flip()  
-table(data$Income)  
+ggplot(data=data,aes(x=Income,group=Nationality))+
+  geom_bar(aes(y=..prop..,fill=Nationality),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Age by Income
+
+```{r}
+#| label: fig-Age-Distribution
+#| fig-pos: h
+#| fig-cap: Age Distribution.
+ggplot(data, aes(x = Age)) +
+  geom_histogram(
+    bins = 20, 
+    fill = "skyblue", 
+    color = "white",
+    alpha = 0.7
+  )
 ```
 
 ```{r}
@@ -198,6 +317,21 @@ ggplot(data, aes(x = Age, y = Income)) +
   labs(x = "Age", y = "Income")
 ```
 
+## Hours_pw by Income
+
+```{r}
+#| label: fig-Hours_PW-Distribution
+#| fig-pos: h
+#| fig-cap: Hours_PW Distribution.
+ggplot(data, aes(x = Hours_PW)) +
+  geom_histogram(
+    bins = 20, 
+    fill = "lightpink", 
+    color = "white",
+    alpha = 0.7
+  )
+```
+
 ```{r}
 #| label: fig-Income-Hours_PW
 #| fig-pos: h
@@ -207,168 +341,118 @@ ggplot(data, aes(x = Hours_PW, y = Income)) +
   labs(x = "Hours_PW", y = "Income")
 ```
 
-# Formal Data Analysis
+# Model selection
+
+fitting full model.
 
 ```{r}
-#| label: glm_model
+#| label: glm_full_model
 #| echo: false
 
-full_model <- glm(Income ~ Age + Education + Marital_Status + Occupation + Sex + Hours_PW + Nationality, family = binomial(link = "logit"), data = data)
+full_model = glm(Income ~ Age + Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"), data = data)
 
+detect_separation_full_model =glm(Income ~ Age + Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"), data = data,method='detect_separation')
+
+print(detect_separation_full_model)
 summary(full_model)
 
-#检查完全分离
+```
+
+```{r}
+#| label: glm_stepAIC_model
+#| echo: false
 
 stepAIC_model <- stepAIC(
   full_model,
   direction = "both",   
   trace = FALSE
 )
-
 summary(stepAIC_model)
-```
-
-```{r}
-#| label: logistf_model
-#| echo: false
-
-logistf_model <- logistf(Income ~ Age + Education + Marital_Status + Occupation + Hours_PW, data = data,family = binomial(link = "logit"))
-summary(logistf_model)
+detect_separation_stepAIC_model=glm(formula = Age + Education + Hours_PW + Marital_Status + Occupation, family = binomial(link = "logit"), data = data,method='detect_separation')
+print(detect_separation_stepAIC_model)
 
 ```
 
+### Option choose of model
+
+To resolve the complete separation issue, merge the categories of some explanatory variables.
+
 ```{r}
-#| label: bayesglm_model
-#| echo: false
-bayesglm_model <- bayesglm(Income ~ Age + Education + Marital_Status + Occupation + Hours_PW, family = binomial, data = data)
-summary(bayesglm_model)
+#| label: merge-Education-Marital_Status
+data.new <- data
+
+data.new$Education <- as.factor(ifelse(data.new$Education %in% c("1st-4th", "5th-6th", "7th-8th", "9th", "10th", "11th", "12th"), "Low_Education", as.character(data.new$Education)))
+data.new$Education <- as.factor(ifelse(data.new$Education %in% c("Assoc-acdm","Assoc-voc","Bachelors","Doctorate","HS-grad","Masters","Prof-school","Some-college"), "High_Education", as.character(data.new$Education)))
+
+data.new$Marital_Status <- as.factor(ifelse(data.new$Marital_Status %in% c( "Separated", "Widowed","Never-married","Divorced"), "Unmarried", as.character(data.new$Marital_Status)))
+
+data.new$Marital_Status <- as.factor(ifelse(data.new$Marital_Status %in% c("Married-spouse-absent","Married-civ-spouse"), "Married", as.character(data.new$Marital_Status)))
+
+
 ```
 
 ```{r}
-#| label: glmnet_lasso_model
-#| echo: false
+#| label: merge-Education-Marital_Status
+data.new$Occupation <- as.factor(ifelse(data.new$Occupation %in% c("Adm-clerical","Exec-managerial","Prof-specialty","Sales","Tech-support"), "Mental Labor", as.character(data.new$Occupation)))
 
-x <- model.matrix(Income ~ Age + Education + Marital_Status + Occupation + Hours_PW, data = data)[,-1]
-y <- data$Income
-cv_fit <- cv.glmnet(x, y, 
-                   family = "binomial",
-                   alpha = 1, 
-                   type.measure = "class")
-best_lambda <- cv_fit$lambda.min
-glmnet_lasso_model <- glmnet(x, y, 
-                     family = "binomial",
-                     alpha = 1,
-                     lambda = best_lambda)
+data.new$Occupation <- as.factor(ifelse(data.new$Occupation %in% c("Craft-repair","Farming-fishing","Handlers-cleaners","Machine-op-inspct","Transport-moving","Other-service","Priv-house-serv","Protective-serv"), "Physical Labor", as.character(data.new$Occupation)))
 
-coef_matrix <- as.matrix(coef(glmnet_lasso_model))
-coef_df <- data.frame(
-  Variable = rownames(coef_matrix),
-  Coefficient = coef_matrix[,1]
+```
+
+```{r}
+model_full_new <-glm(Income ~ Age + Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"),data = data.new)
+
+stepAIC_model_new <- stepAIC(
+  model_full_new,
+  direction = "both",   
+  trace = FALSE
 )
-coef_df <- coef_df[coef_df$Coefficient != 0 & coef_df$Variable != "(Intercept)", ]
-coef_df <- coef_df[order(-abs(coef_df$Coefficient)), ]
-print(coef_df)
+summary(stepAIC_model_new)
+
+detect_separation_stepAIC_model_new <- glm(Income ~ Age + Education + Marital_Status +Occupation+ Hours_PW,data = data.new, family = binomial(link="logit"),method='detect_separation')
+print(detect_separation_stepAIC_model_new)
+
+summary(stepAIC_model_new)
+```
+
+# Model Check
+
+```{r}
+plot_model(stepAIC_model_new, show.values = TRUE,
+           title = "", show.p = FALSE, value.offset = 0.5)
+plot_model(stepAIC_model, show.values = TRUE,
+           title = "", show.p = FALSE, value.offset = 0.5)
 ```
 
 ```{r}
-#| label: glmnet_ridge_model
-#| echo: false
-
-x <- model.matrix(Income ~ Age + Education + Marital_Status + Occupation + Hours_PW, data = data)[,-1]
-y <- data$Income
-cv_fit <- cv.glmnet(x, y, 
-                   family = "binomial",
-                   alpha = 0, 
-                   type.measure = "class")
-best_lambda <- cv_fit$lambda.min
-glmnet_ridge_model <- glmnet(x, y, 
-                     family = "binomial",
-                     alpha = 0,
-                     lambda = best_lambda)
-
-coef_matrix <- as.matrix(coef(glmnet_ridge_model))
-coef_df <- data.frame(
-  Variable = rownames(coef_matrix),
-  Coefficient = coef_matrix[,1]
-)
-coef_df <- coef_df[coef_df$Coefficient != 0 & coef_df$Variable != "(Intercept)", ]
-coef_df <- coef_df[order(-abs(coef_df$Coefficient)), ]
-print(coef_df)
-
+plot_roc_curve <- function(model, datatest) {
+  # 预测概率
+  predicted <- predict(model, newdata = datatest, type = "response")
+  
+  # 将概率转换为分类
+  predicted_class <- ifelse(predicted >= 0.5, ">50k", "<=50k")
+  
+  # 计算 ROC 曲线的性能指标
+  score <- ROCR::prediction(predicted, datatest$Income)
+  perf <- ROCR::performance(score, "tpr", "fpr")
+  auc <- ROCR::performance(score, "auc")
+  
+  # 提取 ROC 曲线的数据
+  perfd <- data.frame(
+    x = perf@x.values[[1]],
+    y = perf@y.values[[1]]
+  )
+  
+  # 绘制 ROC 曲线
+  ggplot2::ggplot(perfd, aes(x = x, y = y)) +
+    ggplot2::geom_line() +
+    ggplot2::xlab("False positive rate") +
+    ggplot2::ylab("True positive rate") +
+    ggplot2::ggtitle(paste("Area under the curve:", round(auc@y.values[[1]], 3)))
+}
 ```
 
 ```{r}
-#| label: glmnet_elasticnet_model
-#| echo: false
-
-x <- model.matrix(Income ~ Age + Education + Marital_Status + Occupation + Hours_PW, data = data)[,-1]
-y <- data$Income
-cv_fit <- cv.glmnet(x, y, 
-                   family = "binomial",
-                   alpha = 0.5, 
-                   type.measure = "class")
-best_lambda <- cv_fit$lambda.min
-glmnet_elasticnet_model <- glmnet(x, y, 
-                     family = "binomial",
-                     alpha = 0.5,
-                     lambda = best_lambda)
-
-coef_matrix <- as.matrix(coef(glmnet_elasticnet_model))
-coef_df <- data.frame(
-  Variable = rownames(coef_matrix),
-  Coefficient = coef_matrix[,1]
-)
-coef_df <- coef_df[coef_df$Coefficient != 0 & coef_df$Variable != "(Intercept)", ]
-coef_df <- coef_df[order(-abs(coef_df$Coefficient)), ]
-print(coef_df)
+plot_roc_curve(stepAIC_model,data)
+plot_roc_curve(stepAIC_model_new,data.new)
 ```
-
-```{r}
-#| label: check_models
-#| echo: false
-
-print("stepAIC_model")
-prob <- predict(stepAIC_model, newdata = data, type = "response")
-data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
-sum(data$check!=data$Income)
-print("error rate:")
-print(sum(data$check!=data$Income)/1385*100)
-
-print("logistf_model")
-prob <- predict(logistf_model, newdata = data, type = "response")
-data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
-sum(data$check!=data$Income)
-print("error rate:")
-print(sum(data$check!=data$Income)/1385*100)
-
-print("bayesglm_model")
-prob <- predict(bayesglm_model, newdata = data, type = "response")
-data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
-sum(data$check!=data$Income)
-print("error rate:")
-print(sum(data$check!=data$Income)/1385*100)
-
-print("glmnet_lasso_model")
-prob <- predict(glmnet_lasso_model, newx = x, type = "response")
-data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
-sum(data$check!=data$Income)
-print("error rate:")
-print(sum(data$check!=data$Income)/1385*100)
-
-
-print("glmnet_ridge_model")
-prob <- predict(glmnet_ridge_model, newx = x, type = "response")
-data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
-sum(data$check!=data$Income)
-print("error rate:")
-print(sum(data$check!=data$Income)/1385*100)
-
-print("glmnet_elasticnet_model")
-prob <- predict(glmnet_elasticnet_model, newx = x, type = "response")
-data['check']=as.factor(ifelse(prob > 0.5, ">50K", "<=50K"))
-sum(data$check!=data$Income)
-print("error rate:")
-print(sum(data$check!=data$Income)/1385*100)
-```
-
-# Conclusions
