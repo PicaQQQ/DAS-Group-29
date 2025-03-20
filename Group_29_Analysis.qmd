@@ -664,11 +664,11 @@ stepAIC_model_new.1.interaction <- stepAIC(
 )
 summary(stepAIC_model_new.1.interaction)
 #Remove insignificant items 
-model_new.1.interaction=glm(Income ~ Age + Education  + Hours_PW + Marital_Status + 
+model_new.1.interaction=glm(Income ~ Age + Education  + Sex + Hours_PW + Marital_Status + 
     Occupation + Age:Marital_Status + Sex:Marital_Status ,data = data.new.1, family = binomial(link="logit"))
 summary(model_new.1.interaction)
 
-detect_separation_model <- glm(Income ~ Age + Education  + Hours_PW + Marital_Status + 
+detect_separation_model <- glm(Income ~ Age + Education + Sex + Hours_PW + Marital_Status + 
     Occupation + Age:Marital_Status + Sex:Marital_Status ,data = data.new.1, family = binomial(link="logit"),method='detect_separation')
 print(detect_separation_model)
 
@@ -685,15 +685,15 @@ stepAIC_model_new.2.interaction <- stepAIC(
 )
 summary(stepAIC_model_new.2.interaction)
 #Remove insignificant items 
-model_new.2.interaction=glm(formula = Income ~ Age + Education  + Hours_PW + Marital_Status + 
-    Occupation  + 
-    Sex:Marital_Status + Sex:Occupation + Marital_Status:Occupation, 
+model_new.2.interaction=glm(formula = Income ~ Age + Education + Sex + Hours_PW + Marital_Status + 
+    Occupation + Age:Marital_Status  + Education:Hours_PW + 
+    Sex:Marital_Status + Sex:Occupation , 
     family = binomial(link = "logit"), data = data.new.2)
 summary(model_new.2.interaction)
 
-detect_separation_model <- glm(formula = Income ~ Age + Education  + Hours_PW + Marital_Status + 
-    Occupation  + 
-    Sex:Marital_Status + Sex:Occupation + Marital_Status:Occupation, 
+detect_separation_model <- glm(formula = Income ~ Age + Education + Sex + Hours_PW + Marital_Status + 
+    Occupation + Age:Marital_Status  + Education:Hours_PW + 
+    Sex:Marital_Status + Sex:Occupation , 
     family = binomial(link = "logit"), data = data.new.2,method='detect_separation')
 print(detect_separation_model)
 
@@ -821,12 +821,13 @@ print(paste("Accuracy7:", round(accuracy7, 3)))
 #0.816
 ```
 
-The AIC of `model_new.2.interaction` is the smallest, indicating the best model fit. Additionally, `model_new.2.interaction` achieves the highest AUC of 0.872, demonstrating the strongest ability to classify high-income (\>50K) and low-income (\<=50K) groups.
+The AIC of `model_new.2.interaction` is the smallest, indicating the best model fit. Additionally, `model_new.2.interaction` achieves the highest AUC of 0.869, demonstrating the strongest ability to classify high-income (\>50K) and low-income (\<=50K) groups.
 
 ```{r}
 AIC(stepAIC_model, stepAIC_model_new.1,stepAIC_model_new.2,stepAIC_model_new.3,model_new.1.interaction,model_new.2.interaction,model_new.3.interaction)
 
 ```
+
 The X-axis (0 → 1) represents the predicted probability, where 0 indicates low income, 1 indicates high income, and 0.5 represents model uncertainty. The Y-axis (residuals) represents the prediction error. A residual value close to 0 indicates that the predicted result is close to the actual value, with a small error, while a residual value far from 0 indicates a larger discrepancy between the predicted and actual values.\
 At points where the X-axis is close to 0 and 1, residual values are larger, indicating higher prediction errors in these regions. However, this is a normal phenomenon in logistic regression. When the X-axis is near 0.5, the residual values are smaller, suggesting that the model fits better in the middle probability range.
 
