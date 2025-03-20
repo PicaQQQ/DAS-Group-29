@@ -384,7 +384,7 @@ stepAIC_model <- stepAIC(
   trace = FALSE
 )
 summary(stepAIC_model)
-detect_separation_stepAIC_model=glm(formula = Age + Education + Hours_PW + Marital_Status + Occupation, family = binomial(link = "logit"), data = data,method='detect_separation')
+detect_separation_stepAIC_model=glm(formula =Income ~ Age + Education + Hours_PW + Marital_Status + Occupation, family = binomial(link = "logit"), data = data,method='detect_separation')
 print(detect_separation_stepAIC_model)
 
 ```
