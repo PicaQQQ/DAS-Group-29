@@ -102,6 +102,22 @@ levels(data$Marital_Status)
 levels(data$Occupation)
 levels(data$Sex)
 levels((data$Nationality))
+
+dependent_var <- "Income"
+independent_vars <- c("Education", "Marital_Status", "Occupation", "Sex", "Nationality")
+results <- list()
+for (var in independent_vars) {
+  contingency_table <- table(data[[var]], data[[dependent_var]])
+  chi_test <- chisq.test(contingency_table)
+    results[[var]] <- chi_test
+}
+for (var in names(results)) {
+  cat("Chi-square test for", var, "vs ",dependent_var,":\n")
+  print(results[[var]])
+  cat("\n")
+}
+
+
 ```
 
 ```{r}
@@ -189,8 +205,8 @@ ggplot(data=data,aes(x=Income,group=Education))+
 ## Martial_Status by Income
 
 ```{r}
-#| label: tbl-Martial_Status -Distribution
-#| tbl-cap: Martial_Status  Distribution.
+#| label: tbl-Martial_Status-Distribution
+#| tbl-cap: Martial_Status Distribution.
 
 data %>%
   tabyl(Income,Marital_Status) %>%
@@ -392,58 +408,227 @@ data.new$Marital_Status <- as.factor(ifelse(data.new$Marital_Status %in% c("Marr
 ```
 
 ```{r}
-#| label: merge-Education-Marital_Status
-data.new$Occupation <- as.factor(ifelse(data.new$Occupation %in% c("Adm-clerical","Exec-managerial","Prof-specialty","Sales","Tech-support"), "Mental Labor", as.character(data.new$Occupation)))
+#| label: tbl-Martial_Status-Distribution-new
+#| tbl-cap: Martial_Status  Distribution.
 
-data.new$Occupation <- as.factor(ifelse(data.new$Occupation %in% c("Craft-repair","Farming-fishing","Handlers-cleaners","Machine-op-inspct","Transport-moving","Other-service","Priv-house-serv","Protective-serv"), "Physical Labor", as.character(data.new$Occupation)))
-
+data.new %>%
+  tabyl(Income,Marital_Status) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
 ```
 
 ```{r}
-model_full_new <-glm(Income ~ Age + Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"),data = data.new)
+#| label: fig-Income-Marital_Status-new
+#| fig-pos: h
+#| fig-cap: Income by Marital_Status.
+ggplot(data=data.new, aes(x = Income, fill = Marital_Status)) + 
+  geom_bar(position = "fill") + 
+  labs(x = "Income", y = "Marital_Status") +
+  coord_flip()  
+ggplot(data=data.new,aes(x=Income,group=Marital_Status))+
+  geom_bar(aes(y=..prop..,fill=Marital_Status),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
 
-stepAIC_model_new <- stepAIC(
-  model_full_new,
+```{r}
+#| label: tbl-Education-new
+#| tbl-cap: Education Distribution.
+
+data.new %>%
+  tabyl(Income,Education) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+```
+
+```{r}
+#| label: fig-Income-Education-new
+#| fig-pos: h
+#| fig-cap: Income by Education.
+ggplot(data=data.new, aes(x = Income, fill = Education)) + 
+  geom_bar(position = "fill") + 
+  labs(x = "Income", y = "Education") +
+  coord_flip()  
+ggplot(data=data.new,aes(x=Income,group=Education))+
+  geom_bar(aes(y=..prop..,fill=Education),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Combine occupation types (physical labor and mental labor)
+
+```{r}
+#| label: merge-Occupation-M-P
+
+data.new.1<-data.new
+
+data.new.1$Occupation <- as.factor(ifelse(data.new.1$Occupation %in% c("Adm-clerical","Exec-managerial","Prof-specialty","Sales","Tech-support","Exec-managerial"), "Mental Labor", as.character(data.new.1$Occupation)))
+
+data.new.1$Occupation <- as.factor(ifelse(data.new.1$Occupation %in% c("Craft-repair","Farming-fishing","Handlers-cleaners","Machine-op-inspct","Transport-moving","Other-service","Priv-house-serv","Protective-serv"), "Physical Labor", as.character(data.new.1$Occupation)))
+
+
+data.new.1 %>%
+  tabyl(Income,Occupation) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+
+ggplot(data=data.new.1, aes(x = Income, fill = Occupation)) + 
+  geom_bar(position = "fill") + 
+  labs(x = "Income", y = "Occupation") +
+  coord_flip()  
+ggplot(data=data.new.1,aes(x=Income,group=Occupation))+
+  geom_bar(aes(y=..prop..,fill=Occupation),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Combine occupation types (by PRC Job Classification List)
+
+ref:<https://zchweb.oss-cn-beijing.aliyuncs.com/contract/temp/2021122116541363304.pdf>
+
+```{r}
+#| label: merge-Occupation-PRC_Job_Classification_List
+data.new.2<-data.new
+
+data.new.2$Occupation <- as.factor(ifelse(data.new.2$Occupation %in% c("Exec-managerial"), "1", as.character(data.new.2$Occupation)))
+
+data.new.2$Occupation <- as.factor(ifelse(data.new.2$Occupation %in% c("Prof-specialty","Tech-support"), "2", as.character(data.new.2$Occupation)))
+
+data.new.2$Occupation <- as.factor(ifelse(data.new.2$Occupation %in% c("Adm-clerical"), "3", as.character(data.new.2$Occupation)))
+
+data.new.2$Occupation <- as.factor(ifelse(data.new.2$Occupation %in% c("Sales","Handlers-cleaners","Other-service","Priv-house-serv","Protective-serv"), "4", as.character(data.new.2$Occupation)))
+
+data.new.2$Occupation <- as.factor(ifelse(data.new.2$Occupation %in% c("Farming-fishing"), "5", as.character(data.new.2$Occupation)))
+
+data.new.2$Occupation <- as.factor(ifelse(data.new.2$Occupation %in% c("Craft-repair","Machine-op-inspct","Transport-moving"), "6", as.character(data.new.2$Occupation)))
+
+data.new.2 %>%
+  tabyl(Income,Occupation) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+
+ggplot(data=data.new.2, aes(x = Income, fill = Occupation)) + 
+  geom_bar(position = "fill") + 
+  labs(x = "Income", y = "Occupation") +
+  coord_flip()  
+ggplot(data=data.new.2,aes(x=Income,group=Occupation))+
+  geom_bar(aes(y=..prop..,fill=Occupation),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+## Combine occupation types (by International Standard Classification of Occupations (ISCO-08))
+
+ref:<https://ilostat.ilo.org/methods/concepts-and-definitions/classification-occupation/>
+
+```{r}
+#| label: merge-Occupation-ISCO_08
+data.new.3<-data.new
+
+data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Exec-managerial"), "1", as.character(data.new.3$Occupation)))
+
+data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Prof-specialty"), "2", as.character(data.new.3$Occupation)))
+
+data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Tech-support"), "3", as.character(data.new.3$Occupation)))
+
+data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Adm-clerical"), "4", as.character(data.new.3$Occupation)))
+
+
+data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Farming-fishing"), "6", as.character(data.new.3$Occupation)))
+
+data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Other-service","Priv-house-serv","Protective-serv","Sales"), "5", as.character(data.new.3$Occupation)))
+
+data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Farming-fishing"), "6", as.character(data.new.3$Occupation)))
+
+data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Craft-repair"), "7", as.character(data.new.3$Occupation)))
+
+data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Transport-moving","Machine-op-inspct"), "8", as.character(data.new.3$Occupation)))
+
+data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Handlers-cleaners"), "9", as.character(data.new.3$Occupation)))
+	
+
+data.new.3 %>%
+  tabyl(Income,Occupation) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+
+ggplot(data=data.new.3, aes(x = Income, fill = Occupation)) + 
+  geom_bar(position = "fill") + 
+  labs(x = "Income", y = "Occupation") +
+  coord_flip()  
+ggplot(data=data.new.3,aes(x=Income,group=Occupation))+
+  geom_bar(aes(y=..prop..,fill=Occupation),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
+```{r}
+model_full_new.1 <-glm(Income ~ Age +Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"),data = data.new.1)
+
+stepAIC_model_new.1 <- stepAIC(
+  model_full_new.1,
   direction = "both",   
   trace = FALSE
 )
-summary(stepAIC_model_new)
+summary(stepAIC_model_new.1)
 
-detect_separation_stepAIC_model_new <- glm(Income ~ Age + Education + Marital_Status +Occupation+ Hours_PW,data = data.new, family = binomial(link="logit"),method='detect_separation')
-print(detect_separation_stepAIC_model_new)
+detect_separation_model <- glm(Income ~ Age + Education +Sex+ Marital_Status +Occupation+ Hours_PW,data = data.new.1, family = binomial(link="logit"),method='detect_separation')
+print(detect_separation_model)
 
-summary(stepAIC_model_new)
+model_full_new.2 <-glm(Income ~ Age +Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"),data = data.new.2)
+
+stepAIC_model_new.2 <- stepAIC(
+  model_full_new.2,
+  direction = "both",   
+  trace = FALSE
+)
+summary(stepAIC_model_new.2)
+
+detect_separation_model <- glm(Income ~ Age + Education +Sex+ Marital_Status +Occupation+ Hours_PW,data = data.new.2, family = binomial(link="logit"),method='detect_separation')
+print(detect_separation_model)
+
+
+model_full_new.3 <-glm(Income ~ Age +Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"),data = data.new.3)
+
+stepAIC_model_new.3 <- stepAIC(
+  model_full_new.3,
+  direction = "both",   
+  trace = FALSE
+)
+summary(stepAIC_model_new.3)
+
+detect_separation_model <- glm(Income ~ Age + Education +Sex+ Marital_Status +Occupation+ Hours_PW,data = data.new.3, family = binomial(link="logit"),method='detect_separation')
+print(detect_separation_model)
+
+
 ```
 
 # Model Check
 
 ```{r}
-plot_model(stepAIC_model_new, show.values = TRUE,
-           title = "", show.p = FALSE, value.offset = 0.5)
+
 plot_model(stepAIC_model, show.values = TRUE,
+           title = "", show.p = FALSE, value.offset = 0.5)
+
+plot_model(stepAIC_model_new.1, show.values = TRUE,
+           title = "", show.p = FALSE, value.offset = 0.5)
+plot_model(stepAIC_model_new.2, show.values = TRUE,
+           title = "", show.p = FALSE, value.offset = 0.5)
+plot_model(stepAIC_model_new.3, show.values = TRUE,
            title = "", show.p = FALSE, value.offset = 0.5)
 ```
 
 ```{r}
 plot_roc_curve <- function(model, datatest) {
-  # 预测概率
   predicted <- predict(model, newdata = datatest, type = "response")
-  
-  # 将概率转换为分类
   predicted_class <- ifelse(predicted >= 0.5, ">50k", "<=50k")
-  
-  # 计算 ROC 曲线的性能指标
   score <- ROCR::prediction(predicted, datatest$Income)
   perf <- ROCR::performance(score, "tpr", "fpr")
   auc <- ROCR::performance(score, "auc")
-  
-  # 提取 ROC 曲线的数据
   perfd <- data.frame(
     x = perf@x.values[[1]],
     y = perf@y.values[[1]]
   )
-  
-  # 绘制 ROC 曲线
   ggplot2::ggplot(perfd, aes(x = x, y = y)) +
     ggplot2::geom_line() +
     ggplot2::xlab("False positive rate") +
@@ -454,5 +639,87 @@ plot_roc_curve <- function(model, datatest) {
 
 ```{r}
 plot_roc_curve(stepAIC_model,data)
-plot_roc_curve(stepAIC_model_new,data.new)
+qchisq(0.95,df=1374)
+plot_roc_curve(stepAIC_model_new.1,data.new.1)
+plot_roc_curve(stepAIC_model_new.2,data.new.2)
+plot_roc_curve(stepAIC_model_new.3,data.new.3)
+
+anova_result <- anova(stepAIC_model_new.1)
+print(anova_result)
+anova_result <- anova(stepAIC_model_new.2)
+print(anova_result)
+anova_result <- anova(stepAIC_model_new.3)
+print(anova_result)
+```
+
+## Consider the interaction effects
+
+```{r}
+model_full_new.1.interaction <-glm(Income ~ (Age +Education + Sex + Hours_PW + Marital_Status + Occupation)^2  + Nationality, family = binomial(link = "logit"),data = data.new.1)
+
+stepAIC_model_new.1.interaction <- stepAIC(
+  model_full_new.1.interaction,
+  direction = "both",   
+  trace = FALSE
+)
+summary(stepAIC_model_new.1.interaction)
+#Remove insignificant items 
+model_new.1.interaction=glm(Income ~ Age + Education  + Hours_PW + Marital_Status + 
+    Occupation + Age:Marital_Status + Sex:Marital_Status ,data = data.new.1, family = binomial(link="logit"))
+summary(model_new.1.interaction)
+
+detect_separation_model <- glm(Income ~ Age + Education  + Hours_PW + Marital_Status + 
+    Occupation + Age:Marital_Status + Sex:Marital_Status ,data = data.new.1, family = binomial(link="logit"),method='detect_separation')
+print(detect_separation_model)
+
+plot_roc_curve(model_new.1.interaction,data.new.1)
+```
+
+```{r}
+model_full_new.2.interaction <-glm(Income ~ (Age +Education + Sex + Hours_PW + Marital_Status + Occupation)^2  + Nationality, family = binomial(link = "logit"),data = data.new.2)
+
+stepAIC_model_new.2.interaction <- stepAIC(
+  model_full_new.2.interaction,
+  direction = "both",   
+  trace = FALSE
+)
+summary(stepAIC_model_new.2.interaction)
+#Remove insignificant items 
+model_new.2.interaction=glm(formula = Income ~ Age + Education  + Hours_PW + Marital_Status + 
+    Occupation  + 
+    Sex:Marital_Status + Sex:Occupation + Marital_Status:Occupation, 
+    family = binomial(link = "logit"), data = data.new.2)
+summary(model_new.2.interaction)
+
+detect_separation_model <- glm(formula = Income ~ Age + Education  + Hours_PW + Marital_Status + 
+    Occupation  + 
+    Sex:Marital_Status + Sex:Occupation + Marital_Status:Occupation, 
+    family = binomial(link = "logit"), data = data.new.2,method='detect_separation')
+print(detect_separation_model)
+
+plot_roc_curve(model_new.2.interaction,data.new.2)
+```
+
+```{r}
+
+model_full_new.3.interaction <-glm(Income ~ (Age +Education + Sex + Hours_PW + Marital_Status + Occupation)^2  + Nationality, family = binomial(link = "logit"),data = data.new.3)
+
+stepAIC_model_new.3.interaction <- stepAIC(
+  model_full_new.3.interaction,
+  direction = "both",   
+  trace = FALSE
+)
+summary(stepAIC_model_new.3.interaction)
+#Remove insignificant items 
+model_new.3.interaction=glm(formula = Income ~ Age + Sex + Education + Hours_PW + Marital_Status + 
+    Occupation   + Marital_Status:Occupation, 
+    family = binomial(link = "logit"), data = data.new.3)
+summary(model_new.3.interaction)
+
+detect_separation_model <- glm(formula = Income ~ Age + Sex+ Education + Hours_PW + Marital_Status + 
+    Occupation   + Marital_Status:Occupation, 
+    family = binomial(link = "logit"), data = data.new.3,method='detect_separation')
+print(detect_separation_model)
+
+plot_roc_curve(model_new.3.interaction,data.new.3)
 ```
