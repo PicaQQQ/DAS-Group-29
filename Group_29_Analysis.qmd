@@ -821,9 +821,35 @@ print(paste("Accuracy7:", round(accuracy7, 3)))
 #0.816
 ```
 
-The AIC of `stepAIC_model` is the smallest, indicating the best model fit. While it includes more variables, it does not suffer from overfitting. Additionally, `stepAIC_model` achieves the highest AUC of 0.881, demonstrating the strongest ability to classify high-income (\>50K) and low-income (\<=50K) groups.
+The AIC of `model_new.2.interaction` is the smallest, indicating the best model fit. Additionally, `model_new.2.interaction` achieves the highest AUC of 0.872, demonstrating the strongest ability to classify high-income (\>50K) and low-income (\<=50K) groups.
 
 ```{r}
 AIC(stepAIC_model, stepAIC_model_new.1,stepAIC_model_new.2,stepAIC_model_new.3,model_new.1.interaction,model_new.2.interaction,model_new.3.interaction)
+
+```
+The X-axis (0 → 1) represents the predicted probability, where 0 indicates low income, 1 indicates high income, and 0.5 represents model uncertainty. The Y-axis (residuals) represents the prediction error. A residual value close to 0 indicates that the predicted result is close to the actual value, with a small error, while a residual value far from 0 indicates a larger discrepancy between the predicted and actual values.\
+At points where the X-axis is close to 0 and 1, residual values are larger, indicating higher prediction errors in these regions. However, this is a normal phenomenon in logistic regression. When the X-axis is near 0.5, the residual values are smaller, suggesting that the model fits better in the middle probability range.
+
+```{r}
+fitted_values <- fitted(model_new.2.interaction)
+plot(fitted_values, residuals_dev, 
+     main = "Residuals vs Fitted Values", 
+     xlab = "Fitted Values", 
+     ylab = "Residuals", 
+     col = "blue", pch = 20)
+
+abline(h = 0, col = "red", lwd = 2, lty = 2)
+
+```
+
+The residuals follow a normal distribution in the middle region but deviate from the diagonal line at both ends, especially on the right side. However, slight tail deviations are common in logistic regression.
+
+```{r}
+std_residuals <- stdres(model_new.2.interaction)
+
+qqnorm(std_residuals, 
+       main = "QQ Plot of Standardized Residuals", 
+       col = "blue", pch = 20)
+qqline(std_residuals, col = "red", lwd = 2)  
 
 ```
