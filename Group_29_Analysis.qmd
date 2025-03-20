@@ -723,3 +723,107 @@ print(detect_separation_model)
 
 plot_roc_curve(model_new.3.interaction,data.new.3)
 ```
+
+# Model Assumption
+
+The Hosmer-Lemeshow test p-values for all seven models are greater than 0.05, indicating a good model fit. The predicted probabilities do not show a significant difference from the actual data distribution, confirming that the models are suitable for use.
+
+```{r}
+install.packages("ResourceSelection")
+library(ResourceSelection)
+hl_test_model <- hoslem.test(stepAIC_model$y, fitted(stepAIC_model), g = 10)
+hl_test_model_new.1<-hoslem.test(stepAIC_model_new.1$y, fitted(stepAIC_model_new.1), g = 10)
+hl_test_model_new.2<-hoslem.test(stepAIC_model_new.2$y, fitted(stepAIC_model_new.2), g = 10)
+hl_test_model_new.3<-hoslem.test(stepAIC_model_new.3$y, fitted(stepAIC_model_new.3), g = 10)
+hl_test_model_new.1.interaction<-hoslem.test(model_new.1.interaction$y, fitted(model_new.1.interaction), g = 10)
+hl_test_model_new.2.interaction<-hoslem.test(model_new.2.interaction$y, fitted(model_new.2.interaction), g = 10)
+hl_test_model_new.3.interaction<-hoslem.test(model_new.3.interaction$y, fitted(model_new.3.interaction), g = 10)
+
+print(hl_test_model)
+print(hl_test_model_new.1)
+print(hl_test_model_new.2)
+print(hl_test_model_new.3)
+print(hl_test_model_new.1.interaction)
+print(hl_test_model_new.2.interaction)
+print(hl_test_model_new.3.interaction)
+
+```
+
+When evaluating the prediction accuracy of the seven models, all models achieved an accuracy greater than 0.8, with a difference of no more than 0.02 between them. This indicates that the models can effectively distinguish between high-income (\>50K) and low-income (\<=50K) groups.
+
+```{r}
+pred_prob1 <- predict(stepAIC_model, type = "response")
+pred_class1 <- ifelse(pred_prob1 >= 0.5, ">50K", "<=50K")
+confusion_matrix1 <- table(Predicted = pred_class1, Actual = data$Income)
+print(confusion_matrix1)
+accuracy1 <- sum(diag(confusion_matrix1)) / sum(confusion_matrix1)
+print(paste("Accuracy1:", round(accuracy1, 3)))
+#0.829
+```
+
+```{r}
+pred_prob2 <- predict(stepAIC_model_new.1, type = "response")
+pred_class2 <- ifelse(pred_prob2 >= 0.5, ">50K", "<=50K")
+confusion_matrix2 <- table(Predicted = pred_class2, Actual = data.new.1$Income)
+print(confusion_matrix2)
+accuracy2 <- sum(diag(confusion_matrix2)) / sum(confusion_matrix2)
+print(paste("Accuracy2:", round(accuracy2, 3)))
+#0.809
+```
+
+```{r}
+pred_prob3 <- predict(stepAIC_model_new.2, type = "response")
+pred_class3 <- ifelse(pred_prob3 >= 0.5, ">50K", "<=50K")
+confusion_matrix3 <- table(Predicted = pred_class3, Actual = data.new.2$Income)
+print(confusion_matrix3)
+accuracy3 <- sum(diag(confusion_matrix3)) / sum(confusion_matrix3)
+print(paste("Accuracy3:", round(accuracy3, 3)))
+#0.82
+```
+
+```{r}
+pred_prob4 <- predict(stepAIC_model_new.3, type = "response")
+pred_class4 <- ifelse(pred_prob4 >= 0.5, ">50K", "<=50K")
+confusion_matrix4 <- table(Predicted = pred_class4, Actual = data.new.3$Income)
+print(confusion_matrix4)
+accuracy4 <- sum(diag(confusion_matrix4)) / sum(confusion_matrix4)
+print(paste("Accuracy4:", round(accuracy4, 3)))
+#0.823
+```
+
+```{r}
+pred_prob5 <- predict(model_new.1.interaction, type = "response")
+pred_class5 <- ifelse(pred_prob5 >= 0.5, ">50K", "<=50K")
+confusion_matrix5 <- table(Predicted = pred_class5, Actual = data.new.1$Income)
+print(confusion_matrix5)
+accuracy5 <- sum(diag(confusion_matrix5)) / sum(confusion_matrix5)
+print(paste("Accuracy5:", round(accuracy5, 3)))
+#0.817
+```
+
+```{r}
+pred_prob6 <- predict(model_new.2.interaction, type = "response")
+pred_class6 <- ifelse(pred_prob6 >= 0.5, ">50K", "<=50K")
+confusion_matrix6 <- table(Predicted = pred_class6, Actual = data.new.2$Income)
+print(confusion_matrix6)
+accuracy6 <- sum(diag(confusion_matrix6)) / sum(confusion_matrix6)
+print(paste("Accuracy6:", round(accuracy6, 3)))
+#0.825
+```
+
+```{r}
+pred_prob7 <- predict(model_new.3.interaction, type = "response")
+pred_class7 <- ifelse(pred_prob7 >= 0.5, ">50K", "<=50K")
+confusion_matrix7 <- table(Predicted = pred_class7, Actual = data.new.3$Income)
+print(confusion_matrix7)
+accuracy7 <- sum(diag(confusion_matrix7)) / sum(confusion_matrix7)
+print(paste("Accuracy7:", round(accuracy7, 3)))
+#0.816
+```
+
+The AIC of `stepAIC_model` is the smallest, indicating the best model fit. While it includes more variables, it does not suffer from overfitting. Additionally, `stepAIC_model` achieves the highest AUC of 0.881, demonstrating the strongest ability to classify high-income (\>50K) and low-income (\<=50K) groups.
+
+```{r}
+AIC(stepAIC_model, stepAIC_model_new.1,stepAIC_model_new.2,stepAIC_model_new.3,model_new.1.interaction,model_new.2.interaction,model_new.3.interaction)
+
+```
