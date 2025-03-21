@@ -686,13 +686,13 @@ stepAIC_model_new.2.interaction <- stepAIC(
 summary(stepAIC_model_new.2.interaction)
 #Remove insignificant items 
 model_new.2.interaction=glm(formula = Income ~ Age + Education + Sex + Hours_PW + Marital_Status + 
-    Occupation + Age:Marital_Status  + Education:Hours_PW + 
+    Occupation  + 
     Sex:Marital_Status + Sex:Occupation , 
     family = binomial(link = "logit"), data = data.new.2)
 summary(model_new.2.interaction)
 
 detect_separation_model <- glm(formula = Income ~ Age + Education + Sex + Hours_PW + Marital_Status + 
-    Occupation + Age:Marital_Status  + Education:Hours_PW + 
+    Occupation + 
     Sex:Marital_Status + Sex:Occupation , 
     family = binomial(link = "logit"), data = data.new.2,method='detect_separation')
 print(detect_separation_model)
@@ -821,7 +821,7 @@ print(paste("Accuracy7:", round(accuracy7, 3)))
 #0.816
 ```
 
-The AIC of `model_new.2.interaction` is the smallest, indicating the best model fit. Additionally, `model_new.2.interaction` achieves the highest AUC of 0.869, demonstrating the strongest ability to classify high-income (\>50K) and low-income (\<=50K) groups.
+The AIC of `model_new.2.interaction` is the smallest, indicating the best model fit. Additionally, `model_new.2.interaction` achieves the highest AUC of 0.868, demonstrating the strongest ability to classify high-income (\>50K) and low-income (\<=50K) groups.
 
 ```{r}
 AIC(stepAIC_model, stepAIC_model_new.1,stepAIC_model_new.2,stepAIC_model_new.3,model_new.1.interaction,model_new.2.interaction,model_new.3.interaction)
