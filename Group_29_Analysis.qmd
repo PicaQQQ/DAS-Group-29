@@ -40,6 +40,8 @@ library(janitor)
 library(dplyr)
 library(GGally)
 library(ROCR)
+library(gt)
+
 ```
 
 ```{r}
@@ -89,6 +91,7 @@ Observe the correlation of the numeric of data:
 ```{r}
 #| label: fig-Numeric-Data
 #| echo: false
+#| fig-pos: h
 #| fig-cap: Numeric Data Correlation 
 ggpairs(data[,c("Age","Hours_PW","Income")])
 ```
@@ -117,13 +120,21 @@ for (var in names(results)) {
   print(results[[var]])
   cat("\n")
 }
+
+```
+
+## Income Distribution
+
+```{r}
+#| label: Income-Distribution
+#| echo: false
 cat("Income distribution:\n")
 table(data$Income)
 ```
 
 ```{r}
 #| label: fig-Income-Distribution
-#| echo: false
+#| fig-pos: H
 #| fig-cap: Income Distribution.
 
 ggplot(data, aes(Income)) + 
@@ -137,19 +148,21 @@ This imbalance can impact predictive modeling, as machine learning algorithms ma
 ## Occupation by Income
 
 ```{r}
-#| label: tbl-Occupation -Distribution
-#| tbl-cap: Occupation Distribution.
+#| label: Occupation-Distribution
 
-data %>%
-  tabyl(Income,Occupation ) %>%
+result <- data %>%
+  tabyl(Income, Occupation) %>%
   adorn_percentages() %>%
   adorn_pct_formatting() %>%
   adorn_ns()
+
+result
+
 ```
 
 ```{r}
 #| label: fig-Occupation-Distribution
-#| fig-pos: h
+#| fig-pos: H
 #| fig-cap: Occupation Distribution.
 
 ggplot(data, aes(x=Occupation)) + 
@@ -158,13 +171,23 @@ ggplot(data, aes(x=Occupation)) +
 ```
 
 ```{r}
-#| label: fig-Income-Occupation
-#| fig-pos: h
+#| label: fig-Income-Occupation-1
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
 #| fig-cap: Income by Occupation.
 ggplot(data, aes(x = Income, fill = Occupation)) + 
   geom_bar(position = "fill") + 
   labs(x = "Income", y = "Occupation") +
   coord_flip()
+```
+
+```{r}
+#| label: fig-Income-Occupation-2
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Income by Occupation.
 ggplot(data=data,aes(x=Income,group=Occupation))+
   geom_bar(aes(y=..prop..,fill=Occupation),stat = "count",position="dodge")+
   labs(x="Whether larger than 50K",y="Proportion")
@@ -177,19 +200,21 @@ Administrative/Clerical roles: Approximately 85.6% of individuals in this catego
 ## Education by Income
 
 ```{r}
-#| label: tbl-Education-Distribution
-#| tbl-cap: Education Distribution.
+#| label: Education-Distribution
 
-data %>%
+result <- data %>%
   tabyl(Income,Education) %>%
   adorn_percentages() %>%
   adorn_pct_formatting() %>%
   adorn_ns()
+result
 ```
 
 ```{r}
 #| label: fig-Education-Distribution
-#| fig-pos: h
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
 #| fig-cap: Education Distribution.
 
 ggplot(data, aes(x=Education)) + 
@@ -198,14 +223,25 @@ ggplot(data, aes(x=Education)) +
 ```
 
 ```{r}
-#| label: fig-Income-Education
-#| fig-pos: h
+#| label: fig-Income-Education-1
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 6
 #| fig-cap: Income by Education.
 # Income~Education
 ggplot(data, aes(x = Income, fill = Education)) + 
   geom_bar(position = "fill") + 
   labs(x = "Income", y = "Education") +
   coord_flip()  
+```
+
+```{r}
+#| label: fig-Income-Education-2
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 6
+#| fig-cap: Income by Education.
+# Income~Education
 ggplot(data=data,aes(x=Income,group=Education))+
   geom_bar(aes(y=..prop..,fill=Education),stat = "count",position="dodge")+
   labs(x="Whether larger than 50K",y="Proportion")
@@ -226,17 +262,25 @@ Key Takeaways: Education level is a strong predictor of income. Individuals with
 ```{r}
 #| label: tbl-Martial_Status-Distribution
 #| tbl-cap: Martial_Status Distribution.
-
-data %>%
+#| tbl-pos: H
+result <- data %>%
   tabyl(Income,Marital_Status) %>%
   adorn_percentages() %>%
   adorn_pct_formatting() %>%
   adorn_ns()
+gt_table <- gt(result)|>
+  tab_options(
+    table.width = pct(100),
+    table.font.size = pct( max(50, 100 - ncol(result) * 5) )
+  )
+gt_table
 ```
 
 ```{r}
 #| label: fig-Marital_Status-Distribution
-#| fig-pos: h
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
 #| fig-cap: Marital_Status Distribution.
 ggplot(data, aes(x=Marital_Status)) + 
     geom_bar() + 
@@ -245,7 +289,9 @@ ggplot(data, aes(x=Marital_Status)) +
 
 ```{r}
 #| label: fig-Income-Marital_Status
-#| fig-pos: h
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
 #| fig-cap: Income by Marital_Status.
 ggplot(data, aes(x = Income, fill = Marital_Status)) + 
   geom_bar(position = "fill") + 
@@ -271,17 +317,25 @@ Married individuals (civil spouse):
 ```{r}
 #| label: tbl-Sex-Distribution
 #| tbl-cap: Sex Distribution.
-
-data %>%
+#| tbl-pos: H
+result <- data %>%
   tabyl(Income,Sex) %>%
   adorn_percentages() %>%
   adorn_pct_formatting() %>%
   adorn_ns()
+gt_table <- gt(result)|>
+  tab_options(
+    table.width = pct(100),
+    table.font.size = pct( max(50, 100 - ncol(result) * 5) )
+  )
+gt_table
 ```
 
 ```{r}
 #| label: fig-Sex-Distribution
-#| fig-pos: h
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
 #| fig-cap: Sex Distribution.
 ggplot(data, aes(x=Sex)) + 
     geom_bar() + 
@@ -290,7 +344,9 @@ ggplot(data, aes(x=Sex)) +
 
 ```{r}
 #| label: fig-Income-Sex
-#| fig-pos: h
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
 #| fig-cap: Income by Sex.
 
 ggplot(data, aes(x = Income, fill = Sex)) + 
@@ -313,19 +369,21 @@ Females:
 ## Nationality by Income
 
 ```{r}
-#| label: tbl-Nationality-Distribution
-#| tbl-cap: Nationality Distribution.
+#| label: Nationality-Distribution
 
-data %>%
+result <- data %>%
   tabyl(Income,Nationality) %>%
   adorn_percentages() %>%
   adorn_pct_formatting() %>%
   adorn_ns()
+result
 ```
 
 ```{r}
 #| label: fig-Nationality-Distribution
-#| fig-pos: h
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 12
 #| fig-cap: Nationality Distribution.
 ggplot(data, aes(x=Nationality)) + 
     geom_bar() + 
@@ -334,7 +392,9 @@ ggplot(data, aes(x=Nationality)) +
 
 ```{r}
 #| label: fig-Income-Nationality
-#| fig-pos: h
+#| fig-pos: H
+#| fig-width: 8
+#| fig-height: 6
 #| fig-cap: Income by Nationality.
 # Income~Education
 ggplot(data, aes(x = Income, fill = Nationality)) + 
@@ -360,11 +420,13 @@ Cambodia:
 
 83.3% earn \<=50K, while 16.7% earn \>50K. The majority still earn less than 50K, but a small proportion reaches higher income levels. Key Takeaways: Nationality appears to be a factor influencing income distribution. Some nationalities, such as Canada and Cambodia, have higher proportions of high-income individuals, while others, like Colombia and Cuba, have a stronger concentration in the low-income group. These differences could be attributed to factors such as job opportunities, skill levels, or immigration status affecting income potential.
 
+However, in the dataset, there are 1255 samples with American nationality, accounting for 90.7% of the total. Due to this highly imbalanced distribution, nationality is not suitable as an explanatory variable.
+
 ## Age by Income
 
 ```{r}
 #| label: fig-Age-Distribution
-#| fig-pos: h
+#| fig-pos: H
 #| fig-cap: Age Distribution.
 ggplot(data, aes(x = Age)) +
   geom_histogram(
@@ -377,7 +439,7 @@ ggplot(data, aes(x = Age)) +
 
 ```{r}
 #| label: fig-Income-Age
-#| fig-pos: h
+#| fig-pos: H
 #| fig-cap: Income by Age.
 ggplot(data, aes(x = Age, y = Income)) +
   geom_boxplot() +
@@ -396,7 +458,7 @@ Low-income group (\<=50K): Average age: 36.1 years 25th percentile: 25 years 50t
 
 ```{r}
 #| label: fig-Hours_PW-Distribution
-#| fig-pos: h
+#| fig-pos: H
 #| fig-cap: Hours_PW Distribution.
 ggplot(data, aes(x = Hours_PW)) +
   geom_histogram(
@@ -409,7 +471,7 @@ ggplot(data, aes(x = Hours_PW)) +
 
 ```{r}
 #| label: fig-Income-Hours_PW
-#| fig-pos: h
+#| fig-pos: H
 #| fig-cap: Income by Hours_PW.
 ggplot(data, aes(x = Hours_PW, y = Income)) +
   geom_boxplot() +
@@ -459,14 +521,16 @@ print(detect_separation_stepAIC_model)
 The model selection process involves fitting a Generalized Linear Model (GLM) with a binomial logistic regression to predict whether an individual's income falls into the \>50K or \<=50K category.
 
 1.  Full Model Fitting The initial model (full_model) includes all available predictor variables: Age, Education, Sex, Work Hours per Week (Hours_PW), Marital Status, Occupation, and Nationality. A separation detection test (detect_separation_full_model) is applied to check if certain variables lead to perfect separation, which may cause convergence issues in the model. The summary of the full model provides insights into which variables are statistically significant.
-2.  Model Optimization using Stepwise AIC Stepwise Akaike Information Criterion (AIC) selection is applied (stepAIC_model), which iteratively removes the least significant predictors to find the best-performing model. The final optimized model retains only the most relevant predictors: Age, Education, Work Hours per Week, Marital Status, and Occupation. A separation detection test (detect_separation_stepAIC_model) is again performed to ensure that the refined model does not suffer from perfect separation issues. Key Takeaways: The full model includes all predictors but may contain unnecessary variables that do not contribute significantly. Stepwise AIC selection helps refine the model by retaining only the most informative variables, reducing overfitting and improving interpretability. The final optimized model suggests that Age, Education, Work Hours, Marital Status, and Occupation are the strongest predictors of income. Nationality and Sex are removed in the AIC-selected model, indicating they may not have a significant impact on predicting income in this dataset.
+2.  Model Optimization using Stepwise AIC Stepwise Akaike Information Criterion (AIC) selection is applied (stepAIC_model), which iteratively removes the least significant predictors to find the best-performing model. The final optimized model retains only the most relevant predictors: Age, Education, Work Hours per Week, Marital Status, and Occupation. A separation detection test (detect_separation_stepAIC_model) is performed again to check whether the optimized model exhibits perfect separation issues.
+3.  Key Takeaways: The full model includes all predictors but may contain unnecessary variables that do not contribute significantly. Stepwise AIC selection helps refine the model by retaining only the most informative variables, reducing overfitting and improving interpretability. The final optimized model suggests that Age, Education, Work Hours, Marital Status, and Occupation are the strongest predictors of income. Nationality and Sex are removed in the AIC-selected model, indicating they may not have a significant impact on predicting income in this dataset. The model suffers from perfect separation issues, with the explanatory variables Education and Occupation exhibiting perfect separation.
 
-### Option choose of model
+## Option choose of model
 
-To resolve the complete separation issue, merge the categories of some explanatory variables.
+To resolve the perfect separation issue, merge the categories of some explanatory variables.
 
 ```{r}
 #| label: merge-Education-Marital_Status
+#| include: false
 data.new <- data
 
 data.new$Education <- as.factor(ifelse(data.new$Education %in% c("1st-4th", "5th-6th", "7th-8th", "9th", "10th", "11th", "12th"), "Low_Education", as.character(data.new$Education)))
@@ -482,22 +546,40 @@ data.new$Marital_Status <- as.factor(ifelse(data.new$Marital_Status %in% c("Marr
 ```{r}
 #| label: tbl-Martial_Status-Distribution-new
 #| tbl-cap: Martial_Status  Distribution.
-
-data.new %>%
+#| tbl-pos: H
+result <- data.new %>%
   tabyl(Income,Marital_Status) %>%
   adorn_percentages() %>%
   adorn_pct_formatting() %>%
   adorn_ns()
+gt_table <- gt(result)|>
+  tab_options(
+    table.width = pct(100),
+    table.font.size = pct( max(50, 100 - ncol(result) * 5) )
+  )
+gt_table
 ```
 
 ```{r}
-#| label: fig-Income-Marital_Status-new
-#| fig-pos: h
+#| label: fig-Income-Marital_Status-new-1
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
 #| fig-cap: Income by Marital_Status.
 ggplot(data=data.new, aes(x = Income, fill = Marital_Status)) + 
   geom_bar(position = "fill") + 
   labs(x = "Income", y = "Marital_Status") +
   coord_flip()  
+
+```
+
+```{r}
+#| label: fig-Income-Marital_Status-new-2
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Income by Marital_Status.
+
 ggplot(data=data.new,aes(x=Income,group=Marital_Status))+
   geom_bar(aes(y=..prop..,fill=Marital_Status),stat = "count",position="dodge")+
   labs(x="Whether larger than 50K",y="Proportion")
@@ -506,22 +588,39 @@ ggplot(data=data.new,aes(x=Income,group=Marital_Status))+
 ```{r}
 #| label: tbl-Education-new
 #| tbl-cap: Education Distribution.
-
-data.new %>%
+#| tbl-pos: H
+result <- data.new %>%
   tabyl(Income,Education) %>%
   adorn_percentages() %>%
   adorn_pct_formatting() %>%
   adorn_ns()
+
+gt_table <- gt(result)|>
+  tab_options(
+    table.width = pct(100),
+    table.font.size = pct( max(50, 100 - ncol(result) * 5) )
+  )
+gt_table
 ```
 
 ```{r}
-#| label: fig-Income-Education-new
-#| fig-pos: h
+#| label: fig-Income-Education-new-1
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
 #| fig-cap: Income by Education.
 ggplot(data=data.new, aes(x = Income, fill = Education)) + 
   geom_bar(position = "fill") + 
   labs(x = "Income", y = "Education") +
   coord_flip()  
+```
+
+```{r}
+#| label: fig-Income-Education-new-2
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Income by Education.
 ggplot(data=data.new,aes(x=Income,group=Education))+
   geom_bar(aes(y=..prop..,fill=Education),stat = "count",position="dodge")+
   labs(x="Whether larger than 50K",y="Proportion")
@@ -533,11 +632,24 @@ To address the complete separation issue, some explanatory variables have been m
 
 Groups together individuals with education levels from 1st grade to 12th grade (e.g., 1st-4th, 5th-6th, 7th-8th, 9th, 10th, 11th, 12th). These individuals generally have no formal higher education and are more likely to be in low-income jobs. High Education:
 
-Includes individuals with some form of post-secondary education (e.g., Associate degree, Bachelor’s, Master’s, Doctorate, HS-grad, Prof-school, Some-college). These individuals have better earning potential and are more likely to be in high-income categories. 2. Marital Status Merging Unmarried:
+Includes individuals with some form of post-secondary education (e.g., Associate degree, Bachelor’s, Master’s, Doctorate, HS-grad, Prof-school, Some-college). These individuals have better earning potential and are more likely to be in high-income categories.
+
+2.   Marital Status Merging Unmarried:
 
 Combines Separated, Widowed, Never-married, and Divorced into a single category. These individuals tend to have lower financial stability compared to married individuals. Married:
 
-Combines Married-spouse-absent and Married-civ-spouse into a single category. Married individuals generally have more financial stability, often benefiting from dual-income households. 3. Visualizing the Effects of Merging Marital Status vs. Income: The distribution of income across the newly grouped Married and Unmarried categories is displayed. Education vs. Income: The newly created Low Education and High Education categories allow for a clearer comparison of income distribution between different education levels. Key Takeaways: Merging categories helps reduce model complexity and prevent complete separation issues. Individuals with higher education levels are more likely to earn \>50K compared to those in the Low Education category. Married individuals show a higher proportion of high-income earners, reinforcing previous findings about marital status and financial stability. These transformations improve the model's ability to generalize and make more accurate predictions.
+Combines Married-spouse-absent and Married-civ-spouse into a single category. Married individuals generally have more financial stability, often benefiting from dual-income households.
+
+3.  Visualizing the Effects of Merging
+    -   Marital Status vs. Income:
+
+        The distribution of income across the newly grouped Married and Unmarried categories is displayed.
+
+    -   Education vs. Income:
+
+        The newly created Low Education and High Education categories allow for a clearer comparison of income distribution between different education levels. Key
+
+Takeaways: Merging categories helps reduce model complexity and prevent complete separation issues. Individuals with higher education levels are more likely to earn \>50K compared to those in the Low Education category. Married individuals show a higher proportion of high-income earners, reinforcing previous findings about marital status and financial stability. These transformations improve the model's ability to generalize and make more accurate predictions.
 
 ## Combine occupation types (physical labor and mental labor)
 
@@ -551,11 +663,6 @@ data.new.1$Occupation <- as.factor(ifelse(data.new.1$Occupation %in% c("Adm-cler
 data.new.1$Occupation <- as.factor(ifelse(data.new.1$Occupation %in% c("Craft-repair","Farming-fishing","Handlers-cleaners","Machine-op-inspct","Transport-moving","Other-service","Priv-house-serv","Protective-serv"), "Physical Labor", as.character(data.new.1$Occupation)))
 
 
-data.new.1 %>%
-  tabyl(Income,Occupation) %>%
-  adorn_percentages() %>%
-  adorn_pct_formatting() %>%
-  adorn_ns()
 
 ggplot(data=data.new.1, aes(x = Income, fill = Occupation)) + 
   geom_bar(position = "fill") + 
@@ -566,13 +673,62 @@ ggplot(data=data.new.1,aes(x=Income,group=Occupation))+
   labs(x="Whether larger than 50K",y="Proportion")
 ```
 
+```{r}
+#| label: tbl-Occupation-new-1
+#| tbl-cap: Occupation Distribution (physical labor and mental labor).
+#| tbl-pos: H
+
+result <- data.new.1 %>%
+  tabyl(Income,Occupation) %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting() %>%
+  adorn_ns()
+gt_table <- gt(result)|>
+  tab_options(
+    table.width = pct(100),
+    table.font.size = pct( max(50, 100 - ncol(result) * 5) )
+  )
+gt_table
+```
+
+```{r}
+#| label: fig-Income-Occupation-new-1-1
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Income by Occupation
+ggplot(data=data.new.1, aes(x = Income, fill = Occupation)) + 
+  geom_bar(position = "fill") + 
+  labs(x = "Income", y = "Occupation") +
+  coord_flip()  
+```
+
+```{r}
+#| label: fig-Income-Occupation-new-1-2
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Income by Occupation
+ggplot(data=data.new.1,aes(x=Income,group=Occupation))+
+  geom_bar(aes(y=..prop..,fill=Occupation),stat = "count",position="dodge")+
+  labs(x="Whether larger than 50K",y="Proportion")
+```
+
 To simplify occupational categories and address class imbalance, occupations have been grouped into two broader categories:
 
 Mental Labor (White-collar jobs):
 
-Includes occupations such as Administrative clerical, Executive managerial, Professional specialty, Sales, and Technical support. These jobs typically involve cognitive work, decision-making, and problem-solving. Physical Labor (Blue-collar jobs):
+Includes occupations such as Administrative clerical, Executive managerial, Professional specialty, Sales, and Technical support. These jobs typically involve cognitive work, decision-making, and problem-solving.
 
-Includes Craft repair, Farming and fishing, Handlers and cleaners, Machine operators, Transport workers, Other services, Private household services, and Protective services. These jobs are more labor-intensive and require physical exertion. Analysis of Income Distribution after Merging Mental labor jobs have a higher proportion of individuals earning \>50K, reinforcing the idea that cognitive and managerial roles tend to offer better salaries. Physical labor jobs predominantly fall in the \<=50K category, suggesting that manual labor occupations generally provide lower wages. The proportion of high-income earners in mental labor jobs is significantly higher than in physical labor jobs, highlighting the economic advantage of cognitive and executive occupations. Key Takeaways: Merging occupations into Physical vs. Mental labor simplifies the analysis while preserving meaningful insights. Mental labor positions are more likely to be associated with higher salaries. Physical laborers predominantly fall into the low-income category, likely due to industry pay standards and job requirements. These findings emphasize the importance of education and skill specialization in securing higher-paying jobs.
+Physical Labor (Blue-collar jobs):
+
+Includes Craft repair, Farming and fishing, Handlers and cleaners, Machine operators, Transport workers, Other services, Private household services, and Protective services. These jobs are more labor-intensive and require physical exertion.
+
+Analysis of Income Distribution after Merging:
+
+Mental labor jobs have a higher proportion of individuals earning \>50K, reinforcing the idea that cognitive and managerial roles tend to offer better salaries. Physical labor jobs predominantly fall in the \<=50K category, suggesting that manual labor occupations generally provide lower wages. The proportion of high-income earners in mental labor jobs is significantly higher than in physical labor jobs, highlighting the economic advantage of cognitive and executive occupations.
+
+Key Takeaways: Merging occupations into Physical vs. Mental labor simplifies the analysis while preserving meaningful insights. Mental labor positions are more likely to be associated with higher salaries. Physical laborers predominantly fall into the low-income category, likely due to industry pay standards and job requirements. These findings emphasize the importance of education and skill specialization in securing higher-paying jobs.
 
 ## Combine occupation types (by PRC Job Classification List)
 
@@ -594,16 +750,46 @@ data.new.2$Occupation <- as.factor(ifelse(data.new.2$Occupation %in% c("Farming-
 
 data.new.2$Occupation <- as.factor(ifelse(data.new.2$Occupation %in% c("Craft-repair","Machine-op-inspct","Transport-moving"), "6", as.character(data.new.2$Occupation)))
 
-data.new.2 %>%
+
+```
+
+```{r}
+#| label: tbl-Occupation-new-2
+#| tbl-cap: Occupation Distribution (PRC Job Classification List).
+#| tbl-pos: H
+
+result <- data.new.2 %>%
   tabyl(Income,Occupation) %>%
   adorn_percentages() %>%
   adorn_pct_formatting() %>%
   adorn_ns()
 
+gt_table <- gt(result)|>
+  tab_options(
+    table.width = pct(100),
+    table.font.size = pct( max(50, 100 - ncol(result) * 5) )
+  )
+gt_table
+```
+
+```{r}
+#| label: fig-Income-Occupation-new-2-1
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Income by Occupation
 ggplot(data=data.new.2, aes(x = Income, fill = Occupation)) + 
   geom_bar(position = "fill") + 
   labs(x = "Income", y = "Occupation") +
-  coord_flip()  
+  coord_flip() 
+```
+
+```{r}
+#| label: fig-Income-Occupation-new-2-2
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Income by Occupation
 ggplot(data=data.new.2,aes(x=Income,group=Occupation))+
   geom_bar(aes(y=..prop..,fill=Occupation),stat = "count",position="dodge")+
   labs(x="Whether larger than 50K",y="Proportion")
@@ -611,7 +797,9 @@ ggplot(data=data.new.2,aes(x=Income,group=Occupation))+
 
 To further refine the occupation categories, we classify jobs according to the PRC Job Classification List. This classification system groups occupations based on skill levels and job nature, which allows for a more structured income comparison.
 
-Income Distribution Analysis After Merging Category 1 (Senior Management) has the highest proportion of individuals earning \>50K, reinforcing the idea that executive roles are highly paid. Category 2 (Specialists & Technical Support) also has a notable presence in the high-income group, indicating that specialized skills lead to better salaries. Category 4 (Sales & Service) and Category 5 (Agriculture & Fishing) have the lowest share of high-income earners, highlighting the financial struggles in these job sectors.
+Income Distribution Analysis After Merging:
+
+Category 1 (Senior Management) has the highest proportion of individuals earning \>50K, reinforcing the idea that executive roles are highly paid. Category 2 (Specialists & Technical Support) also has a notable presence in the high-income group, indicating that specialized skills lead to better salaries. Category 4 (Sales & Service) and Category 5 (Agriculture & Fishing) have the lowest share of high-income earners, highlighting the financial struggles in these job sectors.
 
 Key Takeaways: The PRC Job Classification List provides a structured way to analyze income disparities across different occupational groups. Management and technical jobs tend to have higher salaries, while sales, service, and agricultural jobs have a greater share of low-income earners. Grouping occupations in this way allows for more precise policy recommendations and workforce planning.
 
@@ -645,22 +833,53 @@ data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Transpor
 data.new.3$Occupation <- as.factor(ifelse(data.new.3$Occupation %in% c("Handlers-cleaners"), "9", as.character(data.new.3$Occupation)))
 	
 
-data.new.3 %>%
+
+```
+
+```{r}
+#| label: tbl-Occupation-new-3
+#| tbl-cap: Occupation Distribution (ISCO-08).
+#| tbl-pos: H
+
+result <- data.new.3 %>%
   tabyl(Income,Occupation) %>%
   adorn_percentages() %>%
   adorn_pct_formatting() %>%
   adorn_ns()
 
+gt_table <- gt(result)|>
+  tab_options(
+    table.width = pct(100),
+    table.font.size = pct( max(50, 100 - ncol(result) * 5) )
+  )
+gt_table
+```
+
+```{r}
+#| label: fig-Income-Occupation-new-3-1
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Income by Occupation
 ggplot(data=data.new.3, aes(x = Income, fill = Occupation)) + 
   geom_bar(position = "fill") + 
   labs(x = "Income", y = "Occupation") +
   coord_flip()  
+```
+
+```{r}
+#| label: fig-Income-Occupation-new-3-2
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Income by Occupation
 ggplot(data=data.new.3,aes(x=Income,group=Occupation))+
   geom_bar(aes(y=..prop..,fill=Occupation),stat = "count",position="dodge")+
   labs(x="Whether larger than 50K",y="Proportion")
 ```
 
 ```{r}
+#| label: merge_model_check
 model_full_new.1 <-glm(Income ~ Age +Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"),data = data.new.1)
 
 stepAIC_model_new.1 <- stepAIC(
@@ -703,28 +922,56 @@ print(detect_separation_model)
 
 The International Standard Classification of Occupations (ISCO-08) is used to categorize occupations into structured groups based on job function and skill level. This classification allows for a globally standardized approach to analyzing income distribution by profession.
 
-Income Distribution Analysis After Merging Category 1 (Managers) and Category 2 (Professionals) have the highest share of individuals earning \>50K, emphasizing that managerial and specialized roles offer better earnings. Category 5 (Service & Sales) and Category 6 (Agricultural & Fishery) exhibit the lowest proportion of high-income earners, indicating the financial constraints faced by these workers. Category 7 (Craft Workers) and Category 8 (Machine Operators) have an intermediate income distribution, suggesting that skilled manual labor provides moderate earnings.
+Income Distribution Analysis After Merging:
 
-Model Selection and Performance Comparison The stepwise AIC model selection process was applied separately to datasets using different occupational classification methods (Mental vs. Physical Labor, PRC Job Classification, and ISCO-08). All models showed improvement in fitting compared to the full model, but the best performance was observed with the ISCO-08 classification. Nationality was removed in the AIC-selected models, reinforcing the earlier observation that nationality has little impact on income prediction.
+Category 1 (Managers) and Category 2 (Professionals) have the highest share of individuals earning \>50K, emphasizing that managerial and specialized roles offer better earnings. Category 5 (Service & Sales) and Category 6 (Agricultural & Fishery) exhibit the lowest proportion of high-income earners, indicating the financial constraints faced by these workers. Category 7 (Craft Workers) and Category 8 (Machine Operators) have an intermediate income distribution, suggesting that skilled manual labor provides moderate earnings.
+
+Model Selection and Performance Comparison:
+
+The stepwise AIC model selection process was applied separately to datasets using different occupational classification methods (Mental vs. Physical Labor, PRC Job Classification, and ISCO-08). All models showed improvement in fitting compared to the full model, but the best performance was observed with the ISCO-08 classification. Nationality was removed in the AIC-selected models, reinforcing the earlier observation that nationality has little impact on income prediction.
 
 Key Takeaways: ISCO-08 classification provides a structured way to assess income distribution across occupations. Managers and professionals dominate the high-income group, while service, sales, and agriculture workers struggle with lower wages. Machine operators and craft workers occupy a middle ground, earning more than service workers but less than professionals. The final model using ISCO-08 classification achieves a better balance between accuracy and interpretability, making it a robust choice for workforce and economic analysis.
 
 # Model Check
 
 ```{r}
-
-plot_model(stepAIC_model, show.values = TRUE,
-           title = "", show.p = FALSE, value.offset = 0.5)
+#| label: fig-stepAIC_model_new-1
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Model Plot for stepAIC_model_new.1
 
 plot_model(stepAIC_model_new.1, show.values = TRUE,
            title = "", show.p = FALSE, value.offset = 0.5)
+
+```
+
+```{r}
+#| label: fig-stepAIC_model_new-2
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 6
+#| fig-cap: Model Plot for stepAIC_model_new.2
+
 plot_model(stepAIC_model_new.2, show.values = TRUE,
            title = "", show.p = FALSE, value.offset = 0.5)
+
+```
+
+```{r}
+#| label: fig-stepAIC_model_new-3
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 6
+#| fig-cap: Model Plot for stepAIC_model
+
 plot_model(stepAIC_model_new.3, show.values = TRUE,
            title = "", show.p = FALSE, value.offset = 0.5)
 ```
 
 ```{r}
+#| label: func_plot_roc_curve
+#| include: false
 plot_roc_curve <- function(model, datatest) {
   predicted <- predict(model, newdata = datatest, type = "response")
   predicted_class <- ifelse(predicted >= 0.5, ">50k", "<=50k")
@@ -744,18 +991,53 @@ plot_roc_curve <- function(model, datatest) {
 ```
 
 ```{r}
-plot_roc_curve(stepAIC_model,data)
-qchisq(0.95,df=1374)
-plot_roc_curve(stepAIC_model_new.1,data.new.1)
-plot_roc_curve(stepAIC_model_new.2,data.new.2)
-plot_roc_curve(stepAIC_model_new.3,data.new.3)
-
+#|label: anova-test
 anova_result <- anova(stepAIC_model_new.1)
 print(anova_result)
 anova_result <- anova(stepAIC_model_new.2)
 print(anova_result)
 anova_result <- anova(stepAIC_model_new.3)
 print(anova_result)
+```
+
+```{r}
+#| label: fig-ROC-stepAIC_model
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: ROC curve for stepAIC_model
+plot_roc_curve(stepAIC_model,data)
+
+```
+
+```{r}
+#| label: fig-ROC-stepAIC_model-new-1
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: ROC curve for stepAIC_model_new.1
+
+plot_roc_curve(stepAIC_model_new.1,data.new.1)
+```
+
+```{r}
+#| label: fig-ROC-stepAIC_model-new-2
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: ROC curve for stepAIC_model_new.2
+
+plot_roc_curve(stepAIC_model_new.2,data.new.2)
+```
+
+```{r}
+#| label: fig-ROC-stepAIC_model-new-3
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: ROC curve for stepAIC_model_new.3
+
+plot_roc_curve(stepAIC_model_new.3,data.new.3)
 ```
 
 To ensure the reliability and effectiveness of the logistic regression models, multiple validation techniques are applied, including coefficient visualization, ROC curve analysis, and ANOVA testing.
@@ -769,6 +1051,8 @@ Key Takeaways: The ROC curve and AUC values help determine the best occupational
 ## Consider the interaction effects
 
 ```{r}
+#| label: interaction-new-1
+#| echo: false
 model_full_new.1.interaction <-glm(Income ~ (Age +Education + Sex + Hours_PW + Marital_Status + Occupation)^2  + Nationality, family = binomial(link = "logit"),data = data.new.1)
 
 stepAIC_model_new.1.interaction <- stepAIC(
@@ -777,6 +1061,7 @@ stepAIC_model_new.1.interaction <- stepAIC(
   trace = FALSE
 )
 summary(stepAIC_model_new.1.interaction)
+
 #Remove insignificant items 
 model_new.1.interaction=glm(Income ~ Age + Education  + Sex + Hours_PW + Marital_Status + 
     Occupation + Age:Marital_Status + Sex:Marital_Status ,data = data.new.1, family = binomial(link="logit"))
@@ -786,10 +1071,21 @@ detect_separation_model <- glm(Income ~ Age + Education + Sex + Hours_PW + Marit
     Occupation + Age:Marital_Status + Sex:Marital_Status ,data = data.new.1, family = binomial(link="logit"),method='detect_separation')
 print(detect_separation_model)
 
+```
+
+```{r}
+#| label: fig-ROC-interaction-new-1
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: ROC curve for model_new.1.interaction
+
 plot_roc_curve(model_new.1.interaction,data.new.1)
 ```
 
 ```{r}
+#| label: interaction-new-2
+#| echo: false
 model_full_new.2.interaction <-glm(Income ~ (Age +Education + Sex + Hours_PW + Marital_Status + Occupation)^2  + Nationality, family = binomial(link = "logit"),data = data.new.2)
 
 stepAIC_model_new.2.interaction <- stepAIC(
@@ -811,11 +1107,21 @@ detect_separation_model <- glm(formula = Income ~ Age + Education + Sex + Hours_
     family = binomial(link = "logit"), data = data.new.2,method='detect_separation')
 print(detect_separation_model)
 
+```
+
+```{r}
+#| label: fig-ROC-interaction-new-2
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: ROC curve for model_new.2.interaction
+
 plot_roc_curve(model_new.2.interaction,data.new.2)
 ```
 
 ```{r}
-
+#| label: interaction-new-3
+#| echo: false
 model_full_new.3.interaction <-glm(Income ~ (Age +Education + Sex + Hours_PW + Marital_Status + Occupation)^2  + Nationality, family = binomial(link = "logit"),data = data.new.3)
 
 stepAIC_model_new.3.interaction <- stepAIC(
@@ -834,6 +1140,15 @@ detect_separation_model <- glm(formula = Income ~ Age + Sex+ Education + Hours_P
     Occupation   + Marital_Status:Occupation, 
     family = binomial(link = "logit"), data = data.new.3,method='detect_separation')
 print(detect_separation_model)
+
+```
+
+```{r}
+#| label: fig-ROC-interaction-new-3
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: ROC curve for model_new.3.interaction
 
 plot_roc_curve(model_new.3.interaction,data.new.3)
 ```
@@ -855,6 +1170,8 @@ Key Takeaways: Including interaction terms improves model interpretability and a
 The Hosmer-Lemeshow test p-values for all seven models are greater than 0.05, indicating a good model fit. The predicted probabilities do not show a significant difference from the actual data distribution, confirming that the models are suitable for use.
 
 ```{r}
+#| label: hl-test
+
 
 hl_test_model <- hoslem.test(stepAIC_model$y, fitted(stepAIC_model), g = 10)
 hl_test_model_new.1<-hoslem.test(stepAIC_model_new.1$y, fitted(stepAIC_model_new.1), g = 10)
@@ -877,6 +1194,7 @@ print(hl_test_model_new.3.interaction)
 When evaluating the prediction accuracy of the seven models, all models achieved an accuracy greater than 0.8, with a difference of no more than 0.02 between them. This indicates that the models can effectively distinguish between high-income (\>50K) and low-income (\<=50K) groups.
 
 ```{r}
+#|label: accuracy1
 pred_prob1 <- predict(stepAIC_model, type = "response")
 pred_class1 <- ifelse(pred_prob1 >= 0.5, ">50K", "<=50K")
 confusion_matrix1 <- table(Predicted = pred_class1, Actual = data$Income)
@@ -887,6 +1205,7 @@ print(paste("Accuracy1:", round(accuracy1, 3)))
 ```
 
 ```{r}
+#|label: accuracy2
 pred_prob2 <- predict(stepAIC_model_new.1, type = "response")
 pred_class2 <- ifelse(pred_prob2 >= 0.5, ">50K", "<=50K")
 confusion_matrix2 <- table(Predicted = pred_class2, Actual = data.new.1$Income)
@@ -897,6 +1216,7 @@ print(paste("Accuracy2:", round(accuracy2, 3)))
 ```
 
 ```{r}
+#|label: accuracy3
 pred_prob3 <- predict(stepAIC_model_new.2, type = "response")
 pred_class3 <- ifelse(pred_prob3 >= 0.5, ">50K", "<=50K")
 confusion_matrix3 <- table(Predicted = pred_class3, Actual = data.new.2$Income)
@@ -907,6 +1227,7 @@ print(paste("Accuracy3:", round(accuracy3, 3)))
 ```
 
 ```{r}
+#|label: accuracy4
 pred_prob4 <- predict(stepAIC_model_new.3, type = "response")
 pred_class4 <- ifelse(pred_prob4 >= 0.5, ">50K", "<=50K")
 confusion_matrix4 <- table(Predicted = pred_class4, Actual = data.new.3$Income)
@@ -917,6 +1238,7 @@ print(paste("Accuracy4:", round(accuracy4, 3)))
 ```
 
 ```{r}
+#|label: accuracy5
 pred_prob5 <- predict(model_new.1.interaction, type = "response")
 pred_class5 <- ifelse(pred_prob5 >= 0.5, ">50K", "<=50K")
 confusion_matrix5 <- table(Predicted = pred_class5, Actual = data.new.1$Income)
@@ -927,6 +1249,7 @@ print(paste("Accuracy5:", round(accuracy5, 3)))
 ```
 
 ```{r}
+#|label: accuracy6
 pred_prob6 <- predict(model_new.2.interaction, type = "response")
 pred_class6 <- ifelse(pred_prob6 >= 0.5, ">50K", "<=50K")
 confusion_matrix6 <- table(Predicted = pred_class6, Actual = data.new.2$Income)
@@ -937,6 +1260,7 @@ print(paste("Accuracy6:", round(accuracy6, 3)))
 ```
 
 ```{r}
+#|label: accuracy7
 pred_prob7 <- predict(model_new.3.interaction, type = "response")
 pred_class7 <- ifelse(pred_prob7 >= 0.5, ">50K", "<=50K")
 confusion_matrix7 <- table(Predicted = pred_class7, Actual = data.new.3$Income)
@@ -949,6 +1273,7 @@ print(paste("Accuracy7:", round(accuracy7, 3)))
 The AIC of `model_new.2.interaction` is the smallest, indicating the best model fit. Additionally, `model_new.2.interaction` achieves the highest AUC of 0.868, demonstrating the strongest ability to classify high-income (\>50K) and low-income (\<=50K) groups.
 
 ```{r}
+#|label: AIC
 AIC(stepAIC_model, stepAIC_model_new.1,stepAIC_model_new.2,stepAIC_model_new.3,model_new.1.interaction,model_new.2.interaction,model_new.3.interaction)
 
 ```
@@ -957,6 +1282,11 @@ The X-axis (0 → 1) represents the predicted probability, where 0 indicates low
 At points where the X-axis is close to 0 and 1, residual values are larger, indicating higher prediction errors in these regions. However, this is a normal phenomenon in logistic regression. When the X-axis is near 0.5, the residual values are smaller, suggesting that the model fits better in the middle probability range.
 
 ```{r}
+#| label: fig-Residuals-Fitted_Values
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Residuals vs Fitted Values.
 fitted_values <- fitted(model_new.2.interaction)
 residuals_dev <- residuals(model_new.2.interaction)
 plot(fitted_values, residuals_dev, 
@@ -972,8 +1302,12 @@ abline(h = 0, col = "red", lwd = 2, lty = 2)
 The residuals follow a normal distribution in the middle region but deviate from the diagonal line at both ends, especially on the right side. However, slight tail deviations are common in logistic regression.
 
 ```{r}
+#| label: fig-QQ
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: QQ Plot of Standardized Residuals.
 std_residuals <- stdres(model_new.2.interaction)
-
 qqnorm(std_residuals, 
        main = "QQ Plot of Standardized Residuals", 
        col = "blue", pch = 20)
