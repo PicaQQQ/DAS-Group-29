@@ -98,6 +98,8 @@ ggpairs(data[,c("Age","Hours_PW","Income")])
 
 ## Data levels
 
+Observe the levels and correlations of categorical data:
+
 ```{r}
 #| label: data-levels
 #| echo: false
@@ -486,7 +488,7 @@ The dataset contains a variety of work hours, with most individuals working arou
 
 Low-income group (\<=50K): The most common work hours are 40 hours per week, with 546 individuals working this amount. There are 58 unique work hour values, indicating a wide range of working schedules. High-income group (\>50K): The most common work hours are also 40 hours per week, but only 142 individuals in this category work this amount. There are 39 unique work hour values, suggesting slightly less variability in working hours compared to low-income earners. Key Takeaways: Most individuals work 40 hours per week, regardless of income level. High-income earners tend to work more stable hours, while low-income earners exhibit greater variation in work schedules. Longer working hours do not necessarily guarantee higher income, suggesting that job type and skill level are more influential factors in determining earnings.
 
-# Model selection
+# Model Selection
 
 fitting full model.
 
@@ -634,7 +636,7 @@ Groups together individuals with education levels from 1st grade to 12th grade (
 
 Includes individuals with some form of post-secondary education (e.g., Associate degree, Bachelor’s, Master’s, Doctorate, HS-grad, Prof-school, Some-college). These individuals have better earning potential and are more likely to be in high-income categories.
 
-2.   Marital Status Merging Unmarried:
+2.  Marital Status Merging Unmarried:
 
 Combines Separated, Widowed, Never-married, and Divorced into a single category. These individuals tend to have lower financial stability compared to married individuals. Married:
 
@@ -1042,7 +1044,9 @@ plot_roc_curve(stepAIC_model_new.3,data.new.3)
 
 To ensure the reliability and effectiveness of the logistic regression models, multiple validation techniques are applied, including coefficient visualization, ROC curve analysis, and ANOVA testing.
 
-ROC Curve Analysis & AUC Comparison The ROC curve (Receiver Operating Characteristic curve) is plotted for each model to assess its classification performance. AUC (Area Under the Curve) values are calculated: A higher AUC (closer to 1) indicates a better-performing model. A lower AUC (closer to 0.5) suggests poor classification performance. The AUC values of different models are compared, helping to determine which occupational classification method improves predictive accuracy.
+Coefficient Visualization: By visualizing the coefficients of the model, one can intuitively understand the direction and strength of the impact of each independent variable on the dependent variable. If the confidence interval of a variable lies entirely to the right of 1 (OR \> 1), it indicates a positive relationship between the variable and the dependent variable. If the confidence interval lies entirely to the left of 1 (OR \< 1), it suggests a negative relationship. If the confidence interval spans across 1, the positive or negative effect cannot be significantly distinguished.
+
+ROC Curve Analysis & AUC Comparison: The ROC curve (Receiver Operating Characteristic curve) is plotted for each model to assess its classification performance. AUC (Area Under the Curve) values are calculated: A higher AUC (closer to 1) indicates a better-performing model. A lower AUC (closer to 0.5) suggests poor classification performance. The AUC values of different models are compared, helping to determine which occupational classification method improves predictive accuracy.
 
 ANOVA Model Comparison ANOVA (Analysis of Variance) tests compare model fits: A significant p-value (\< 0.05) indicates that additional predictors improve model performance. If models have similar p-values, a simpler model may be preferred to avoid overfitting. The results help in deciding whether stepAIC_model_new.1, stepAIC_model_new.2, or stepAIC_model_new.3 should be used for the final analysis.
 
@@ -1084,6 +1088,16 @@ plot_roc_curve(model_new.1.interaction,data.new.1)
 ```
 
 ```{r}
+#| label: fig-model-plot-new-1
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Model Plot for model_new.1.interaction
+plot_model(model_new.1.interaction, show.values = TRUE,
+           title = "", show.p = FALSE, value.offset = 0.5)
+```
+
+```{r}
 #| label: interaction-new-2
 #| echo: false
 model_full_new.2.interaction <-glm(Income ~ (Age +Education + Sex + Hours_PW + Marital_Status + Occupation)^2  + Nationality, family = binomial(link = "logit"),data = data.new.2)
@@ -1115,8 +1129,17 @@ print(detect_separation_model)
 #| fig-width: 6
 #| fig-height: 4
 #| fig-cap: ROC curve for model_new.2.interaction
-
 plot_roc_curve(model_new.2.interaction,data.new.2)
+```
+
+```{r}
+#| label: fig-model-plot-new-2
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Model Plot for model_new.2.interaction
+plot_model(model_new.2.interaction, show.values = TRUE,
+           title = "", show.p = FALSE, value.offset = 0.5)
 ```
 
 ```{r}
@@ -1149,8 +1172,17 @@ print(detect_separation_model)
 #| fig-width: 6
 #| fig-height: 4
 #| fig-cap: ROC curve for model_new.3.interaction
-
 plot_roc_curve(model_new.3.interaction,data.new.3)
+```
+
+```{r}
+#| label: fig-model-plot-new-3
+#| fig-pos: H
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: Model Plot for model_new.3.interaction
+plot_model(model_new.3.interaction, show.values = TRUE,
+           title = "", show.p = FALSE, value.offset = 0.5)
 ```
 
 To enhance predictive accuracy and account for potential interdependencies, interaction terms between variables are introduced into the logistic regression model. This allows us to evaluate how combinations of factors influence income classification (\<=50K vs. \>50K).
