@@ -41,7 +41,6 @@ library(dplyr)
 library(GGally)
 library(ROCR)
 library(gt)
-
 ```
 
 ```{r}
@@ -98,7 +97,7 @@ ggpairs(data[,c("Age","Hours_PW","Income")])
 
 ## Data levels
 
-Observe the levels and correlations of categorical data:
+Check the levels of different category variables:
 
 ```{r}
 #| label: data-levels
@@ -108,7 +107,13 @@ levels(data$Marital_Status)
 levels(data$Occupation)
 levels(data$Sex)
 levels((data$Nationality))
+```
 
+Use the Chi_square test to test the correlation of category variable with response:
+
+```{r}
+#| label: correlations of categorical data
+#| echo: false
 dependent_var <- "Income"
 independent_vars <- c("Education", "Marital_Status", "Occupation", "Sex", "Nationality")
 results <- list()
@@ -122,8 +127,9 @@ for (var in names(results)) {
   print(results[[var]])
   cat("\n")
 }
-
 ```
+
+The result show the p-value of nationality and income is 0.5965, which is larger than 0.5, so they may be independence, other variables have significance influence in income.
 
 ## Income Distribution
 
@@ -490,7 +496,15 @@ Low-income group (\<=50K): The most common work hours are 40 hours per week, wit
 
 # Model Selection
 
-fitting full model.
+Fitting full model.
+
+\begin{align*}
+\ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\sum_{i=1}^{14}\widehat{\beta}_{\text{Education,i}}\cdot\mathbb{I}_{\text{Education,i}}(x)\\
+&+\sum_{i=1}^{12}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\sum_{i=1}^{5}\widehat{\beta}_{\text{Marital-Status,i}}\cdot\mathbb{I}_{\text{Marital-Status,i}}(x)\\
+&+\sum_{i=1}^{31}\widehat{\beta}_{\text{Nationality,i}}\cdot\mathbb{I}_{\text{Nationality,i}}(x)+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hour-PW}}\cdot\text{Hours-PW}
+\end{align*}
+
+-   This means that estimates from the logistic regression model are for a change on the log-odds scale for income \>=50k in comparison to the response baseline income \<50k
 
 ```{r}
 #| label: glm_full_model
@@ -498,12 +512,24 @@ fitting full model.
 
 full_model = glm(Income ~ Age + Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"), data = data)
 
+summary(full_model)
+```
+
+Check the separation of data:
+
+```{r}
 detect_separation_full_model =glm(Income ~ Age + Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"), data = data,method='detect_separation')
 
 print(detect_separation_full_model)
-summary(full_model)
-
 ```
+
+Use the Forward-Backward selection of stepwise regression and check the separation :
+
+\begin{align*}
+\ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\sum_{i=1}^{14}\widehat{\beta}_{\text{Education,i}}\cdot\mathbb{I}_{\text{Education,i}}(x)\\
+&+\sum_{i=1}^{12}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\sum_{i=1}^{5}\widehat{\beta}_{\text{Marital-Status,i}}\cdot\mathbb{I}_{\text{Marital-Status,i}}(x)\\
+&+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
+\end{align*}
 
 ```{r}
 #| label: glm_stepAIC_model
@@ -523,12 +549,12 @@ print(detect_separation_stepAIC_model)
 The model selection process involves fitting a Generalized Linear Model (GLM) with a binomial logistic regression to predict whether an individual's income falls into the \>50K or \<=50K category.
 
 1.  Full Model Fitting The initial model (full_model) includes all available predictor variables: Age, Education, Sex, Work Hours per Week (Hours_PW), Marital Status, Occupation, and Nationality. A separation detection test (detect_separation_full_model) is applied to check if certain variables lead to perfect separation, which may cause convergence issues in the model. The summary of the full model provides insights into which variables are statistically significant.
-2.  Model Optimization using Stepwise AIC Stepwise Akaike Information Criterion (AIC) selection is applied (stepAIC_model), which iteratively removes the least significant predictors to find the best-performing model. The final optimized model retains only the most relevant predictors: Age, Education, Work Hours per Week, Marital Status, and Occupation. A separation detection test (detect_separation_stepAIC_model) is performed again to check whether the optimized model exhibits perfect separation issues.
+2.  Model Optimization using Stepwise Akaike Information Criterion (AIC) selection is applied (stepAIC_model), which iteratively removes the least significant predictors to find the best-performing model. The final optimized model retains only the most relevant predictors: Age, Education, Work Hours per Week, Marital Status, and Occupation. A separation detection test (detect_separation_stepAIC_model) is performed again to check whether the optimized model exhibits perfect separation issues.
 3.  Key Takeaways: The full model includes all predictors but may contain unnecessary variables that do not contribute significantly. Stepwise AIC selection helps refine the model by retaining only the most informative variables, reducing overfitting and improving interpretability. The final optimized model suggests that Age, Education, Work Hours, Marital Status, and Occupation are the strongest predictors of income. Nationality and Sex are removed in the AIC-selected model, indicating they may not have a significant impact on predicting income in this dataset. The model suffers from perfect separation issues, with the explanatory variables Education and Occupation exhibiting perfect separation.
 
 ## Option choose of model
 
-To resolve the perfect separation issue, merge the categories of some explanatory variables.
+To address the complete separation issue, some explanatory variables have been merged into broader categories. This helps ensure that each category has sufficient data points, improving the stability of the logistic regression model.
 
 ```{r}
 #| label: merge-Education-Marital_Status
@@ -536,14 +562,25 @@ To resolve the perfect separation issue, merge the categories of some explanator
 data.new <- data
 
 data.new$Education <- as.factor(ifelse(data.new$Education %in% c("1st-4th", "5th-6th", "7th-8th", "9th", "10th", "11th", "12th"), "Low_Education", as.character(data.new$Education)))
+
 data.new$Education <- as.factor(ifelse(data.new$Education %in% c("Assoc-acdm","Assoc-voc","Bachelors","Doctorate","HS-grad","Masters","Prof-school","Some-college"), "High_Education", as.character(data.new$Education)))
 
 data.new$Marital_Status <- as.factor(ifelse(data.new$Marital_Status %in% c( "Separated", "Widowed","Never-married","Divorced"), "Unmarried", as.character(data.new$Marital_Status)))
 
 data.new$Marital_Status <- as.factor(ifelse(data.new$Marital_Status %in% c("Married-spouse-absent","Married-civ-spouse"), "Married", as.character(data.new$Marital_Status)))
-
-
 ```
+
+1.  Education Level Merging Low Education:
+
+Groups together individuals with education levels from 1st grade to 12th grade (e.g., 1st-4th, 5th-6th, 7th-8th, 9th, 10th, 11th, 12th). These individuals generally have no formal higher education and are more likely to be in low-income jobs. High Education:
+
+Includes individuals with some form of post-secondary education (e.g., Associate degree, Bachelor’s, Master’s, Doctorate, HS-grad, Prof-school, Some-college). These individuals have better earning potential and are more likely to be in high-income categories.
+
+2.  Marital Status Merging Unmarried:
+
+Combines Separated, Widowed, Never-married, and Divorced into a single category. These individuals tend to have lower financial stability compared to married individuals. Combines Married-spouse-absent and Married-civ-spouse into Married category. Married individuals generally have more financial stability, often benefiting from dual-income households.
+
+For Marital_Status:
 
 ```{r}
 #| label: tbl-Martial_Status-Distribution-new
@@ -563,19 +600,6 @@ gt_table
 ```
 
 ```{r}
-#| label: fig-Income-Marital_Status-new-1
-#| fig-pos: H
-#| fig-width: 6
-#| fig-height: 4
-#| fig-cap: Income by Marital_Status.
-ggplot(data=data.new, aes(x = Income, fill = Marital_Status)) + 
-  geom_bar(position = "fill") + 
-  labs(x = "Income", y = "Marital_Status") +
-  coord_flip()  
-
-```
-
-```{r}
 #| label: fig-Income-Marital_Status-new-2
 #| fig-pos: H
 #| fig-width: 6
@@ -586,6 +610,8 @@ ggplot(data=data.new,aes(x=Income,group=Marital_Status))+
   geom_bar(aes(y=..prop..,fill=Marital_Status),stat = "count",position="dodge")+
   labs(x="Whether larger than 50K",y="Proportion")
 ```
+
+For Education:
 
 ```{r}
 #| label: tbl-Education-new
@@ -606,18 +632,6 @@ gt_table
 ```
 
 ```{r}
-#| label: fig-Income-Education-new-1
-#| fig-pos: H
-#| fig-width: 6
-#| fig-height: 4
-#| fig-cap: Income by Education.
-ggplot(data=data.new, aes(x = Income, fill = Education)) + 
-  geom_bar(position = "fill") + 
-  labs(x = "Income", y = "Education") +
-  coord_flip()  
-```
-
-```{r}
 #| label: fig-Income-Education-new-2
 #| fig-pos: H
 #| fig-width: 6
@@ -627,20 +641,6 @@ ggplot(data=data.new,aes(x=Income,group=Education))+
   geom_bar(aes(y=..prop..,fill=Education),stat = "count",position="dodge")+
   labs(x="Whether larger than 50K",y="Proportion")
 ```
-
-To address the complete separation issue, some explanatory variables have been merged into broader categories. This helps ensure that each category has sufficient data points, improving the stability of the logistic regression model.
-
-1.  Education Level Merging Low Education:
-
-Groups together individuals with education levels from 1st grade to 12th grade (e.g., 1st-4th, 5th-6th, 7th-8th, 9th, 10th, 11th, 12th). These individuals generally have no formal higher education and are more likely to be in low-income jobs. High Education:
-
-Includes individuals with some form of post-secondary education (e.g., Associate degree, Bachelor’s, Master’s, Doctorate, HS-grad, Prof-school, Some-college). These individuals have better earning potential and are more likely to be in high-income categories.
-
-2.  Marital Status Merging Unmarried:
-
-Combines Separated, Widowed, Never-married, and Divorced into a single category. These individuals tend to have lower financial stability compared to married individuals. Married:
-
-Combines Married-spouse-absent and Married-civ-spouse into a single category. Married individuals generally have more financial stability, often benefiting from dual-income households.
 
 3.  Visualizing the Effects of Merging
     -   Marital Status vs. Income:
@@ -663,16 +663,6 @@ data.new.1<-data.new
 data.new.1$Occupation <- as.factor(ifelse(data.new.1$Occupation %in% c("Adm-clerical","Exec-managerial","Prof-specialty","Sales","Tech-support","Exec-managerial"), "Mental Labor", as.character(data.new.1$Occupation)))
 
 data.new.1$Occupation <- as.factor(ifelse(data.new.1$Occupation %in% c("Craft-repair","Farming-fishing","Handlers-cleaners","Machine-op-inspct","Transport-moving","Other-service","Priv-house-serv","Protective-serv"), "Physical Labor", as.character(data.new.1$Occupation)))
-
-
-
-ggplot(data=data.new.1, aes(x = Income, fill = Occupation)) + 
-  geom_bar(position = "fill") + 
-  labs(x = "Income", y = "Occupation") +
-  coord_flip()  
-ggplot(data=data.new.1,aes(x=Income,group=Occupation))+
-  geom_bar(aes(y=..prop..,fill=Occupation),stat = "count",position="dodge")+
-  labs(x="Whether larger than 50K",y="Proportion")
 ```
 
 ```{r}
@@ -880,8 +870,24 @@ ggplot(data=data.new.3,aes(x=Income,group=Occupation))+
   labs(x="Whether larger than 50K",y="Proportion")
 ```
 
+The International Standard Classification of Occupations (ISCO-08) is used to categorize occupations into structured groups based on job function and skill level. This classification allows for a globally standardized approach to analyzing income distribution by profession.
+
+Income Distribution Analysis After Merging:
+
+Category 1 (Managers) and Category 2 (Professionals) have the highest share of individuals earning \>50K, emphasizing that managerial and specialized roles offer better earnings. Category 5 (Service & Sales) and Category 6 (Agricultural & Fishery) exhibit the lowest proportion of high-income earners, indicating the financial constraints faced by these workers. Category 7 (Craft Workers) and Category 8 (Machine Operators) have an intermediate income distribution, suggesting that skilled manual labor provides moderate earnings.
+
+## The outcome of three classification cases
+
+### Mental-Physical Model:
+
+\begin{align*}
+\ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
+&+\widehat{\beta}_{\text{Physical-Labor}}\cdot\mathbb{I}_{\text{Physical-Labor}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
+&+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
+\end{align*}
+
 ```{r}
-#| label: merge_model_check
+#| label: merge_model_check-1
 model_full_new.1 <-glm(Income ~ Age +Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"),data = data.new.1)
 
 stepAIC_model_new.1 <- stepAIC(
@@ -893,7 +899,18 @@ summary(stepAIC_model_new.1)
 
 detect_separation_model <- glm(Income ~ Age + Education +Sex+ Marital_Status +Occupation+ Hours_PW,data = data.new.1, family = binomial(link="logit"),method='detect_separation')
 print(detect_separation_model)
+```
 
+### PRC Model:
+
+\begin{align*}
+\ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
+&+\sum_{i=1}^{6}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
+&+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
+\end{align*}
+
+```{r}
+#| label: merge_model_check-2
 model_full_new.2 <-glm(Income ~ Age +Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"),data = data.new.2)
 
 stepAIC_model_new.2 <- stepAIC(
@@ -905,8 +922,18 @@ summary(stepAIC_model_new.2)
 
 detect_separation_model <- glm(Income ~ Age + Education +Sex+ Marital_Status +Occupation+ Hours_PW,data = data.new.2, family = binomial(link="logit"),method='detect_separation')
 print(detect_separation_model)
+```
 
+### ISCO-08 Model:
 
+\begin{align*}
+    \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
+    &+\sum_{i=1}^{9}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
+    &+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
+\end{align*}
+
+```{r}
+#| label: merge_model_check-3
 model_full_new.3 <-glm(Income ~ Age +Education + Sex + Hours_PW + Marital_Status + Occupation  + Nationality, family = binomial(link = "logit"),data = data.new.3)
 
 stepAIC_model_new.3 <- stepAIC(
@@ -918,23 +945,23 @@ summary(stepAIC_model_new.3)
 
 detect_separation_model <- glm(Income ~ Age + Education +Sex+ Marital_Status +Occupation+ Hours_PW,data = data.new.3, family = binomial(link="logit"),method='detect_separation')
 print(detect_separation_model)
-
-
 ```
 
-The International Standard Classification of Occupations (ISCO-08) is used to categorize occupations into structured groups based on job function and skill level. This classification allows for a globally standardized approach to analyzing income distribution by profession.
+## Model Selection and Performance Comparison
 
-Income Distribution Analysis After Merging:
+The stepwise AIC model selection process was applied separately to datasets using different occupational classification methods (Mental vs. Physical Labor, PRC Job Classification, and ISCO-08). All models showed improvement in fitting compared to the full model, **but the best performance was observed with the PRC Job Classification.** Nationality was removed in the AIC-selected models, reinforcing the earlier observation that nationality has little impact on income prediction.
 
-Category 1 (Managers) and Category 2 (Professionals) have the highest share of individuals earning \>50K, emphasizing that managerial and specialized roles offer better earnings. Category 5 (Service & Sales) and Category 6 (Agricultural & Fishery) exhibit the lowest proportion of high-income earners, indicating the financial constraints faced by these workers. Category 7 (Craft Workers) and Category 8 (Machine Operators) have an intermediate income distribution, suggesting that skilled manual labor provides moderate earnings.
+Key Takeaways:
 
-Model Selection and Performance Comparison:
+-   PRC Job Classification provides a structured way to assess income distribution across occupations.
 
-The stepwise AIC model selection process was applied separately to datasets using different occupational classification methods (Mental vs. Physical Labor, PRC Job Classification, and ISCO-08). All models showed improvement in fitting compared to the full model, but the best performance was observed with the ISCO-08 classification. Nationality was removed in the AIC-selected models, reinforcing the earlier observation that nationality has little impact on income prediction.
+-   Category 1 (Senior Management) and Category 2 (Specialists & Technical Support) dominate the high-income group, while other categories are more likely to fall into lower income levels by comparison.
 
-Key Takeaways: ISCO-08 classification provides a structured way to assess income distribution across occupations. Managers and professionals dominate the high-income group, while service, sales, and agriculture workers struggle with lower wages. Machine operators and craft workers occupy a middle ground, earning more than service workers but less than professionals. The final model using ISCO-08 classification achieves a better balance between accuracy and interpretability, making it a robust choice for workforce and economic analysis.
+The final model based on the PRC Job Classification achieved the lowest AIC value, making it a robust choice for workforce and economic analysis.
 
 # Model Check
+
+Odds of Mental-Physical Model:
 
 ```{r}
 #| label: fig-stepAIC_model_new-1
@@ -948,6 +975,8 @@ plot_model(stepAIC_model_new.1, show.values = TRUE,
 
 ```
 
+Odds of PRC Model:
+
 ```{r}
 #| label: fig-stepAIC_model_new-2
 #| fig-pos: H
@@ -957,8 +986,9 @@ plot_model(stepAIC_model_new.1, show.values = TRUE,
 
 plot_model(stepAIC_model_new.2, show.values = TRUE,
            title = "", show.p = FALSE, value.offset = 0.5)
-
 ```
+
+Odds of ISCO-08 Model:
 
 ```{r}
 #| label: fig-stepAIC_model_new-3
@@ -970,6 +1000,18 @@ plot_model(stepAIC_model_new.2, show.values = TRUE,
 plot_model(stepAIC_model_new.3, show.values = TRUE,
            title = "", show.p = FALSE, value.offset = 0.5)
 ```
+
+```{r}
+#|label: anova-test
+anova_result <- anova(stepAIC_model_new.1)
+print(anova_result)
+anova_result <- anova(stepAIC_model_new.2)
+print(anova_result)
+anova_result <- anova(stepAIC_model_new.3)
+print(anova_result)
+```
+
+ROC Curve Analysis & AUC Comparison :
 
 ```{r}
 #| label: func_plot_roc_curve
@@ -992,15 +1034,7 @@ plot_roc_curve <- function(model, datatest) {
 }
 ```
 
-```{r}
-#|label: anova-test
-anova_result <- anova(stepAIC_model_new.1)
-print(anova_result)
-anova_result <- anova(stepAIC_model_new.2)
-print(anova_result)
-anova_result <- anova(stepAIC_model_new.3)
-print(anova_result)
-```
+Stepwise of full model:
 
 ```{r}
 #| label: fig-ROC-stepAIC_model
@@ -1012,6 +1046,8 @@ plot_roc_curve(stepAIC_model,data)
 
 ```
 
+Mental-Physical Model:
+
 ```{r}
 #| label: fig-ROC-stepAIC_model-new-1
 #| fig-pos: H
@@ -1022,6 +1058,8 @@ plot_roc_curve(stepAIC_model,data)
 plot_roc_curve(stepAIC_model_new.1,data.new.1)
 ```
 
+PRC Model:
+
 ```{r}
 #| label: fig-ROC-stepAIC_model-new-2
 #| fig-pos: H
@@ -1031,6 +1069,8 @@ plot_roc_curve(stepAIC_model_new.1,data.new.1)
 
 plot_roc_curve(stepAIC_model_new.2,data.new.2)
 ```
+
+ISCO-08 Model:
 
 ```{r}
 #| label: fig-ROC-stepAIC_model-new-3
@@ -1053,6 +1093,14 @@ ANOVA Model Comparison ANOVA (Analysis of Variance) tests compare model fits: A 
 Key Takeaways: The ROC curve and AUC values help determine the best occupational classification method in terms of prediction accuracy. Model coefficients provide insights into the most influential factors affecting income. ANOVA helps verify whether additional variables significantly improve prediction performance. The final model selection should balance accuracy and interpretability, preferring models with a high AUC while avoiding excessive complexity.
 
 ## Consider the interaction effects
+
+For the Mental-Physical Model, consider the interaction:
+
+\begin{align*}
+    \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
+    &+\widehat{\beta}_{\text{Physical-Labor}}\cdot\mathbb{I}_{\text{Physical-Labor}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\&+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}\\
+    &+\widehat{\beta}_{\text{Unmarrid,Age}}\cdot\text{Age}\cdot\mathbb{I}_{\text{Unmarried}}(x)+\widehat{\beta}_{\text{Unmarrid,Male}}\cdot\mathbb{I}_{\text{Male}}\cdot\mathbb{I}_{\text{Unmarried}}(x)
+\end{align*}
 
 ```{r}
 #| label: interaction-new-1
@@ -1077,6 +1125,8 @@ print(detect_separation_model)
 
 ```
 
+ROC Curve Analysis & AUC Comparison:
+
 ```{r}
 #| label: fig-ROC-interaction-new-1
 #| fig-pos: H
@@ -1087,6 +1137,8 @@ print(detect_separation_model)
 plot_roc_curve(model_new.1.interaction,data.new.1)
 ```
 
+Odds of the model：
+
 ```{r}
 #| label: fig-model-plot-new-1
 #| fig-pos: H
@@ -1096,6 +1148,15 @@ plot_roc_curve(model_new.1.interaction,data.new.1)
 plot_model(model_new.1.interaction, show.values = TRUE,
            title = "", show.p = FALSE, value.offset = 0.5)
 ```
+
+For the PRC Model, consider the interaction:
+
+\begin{align*}
+    \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
+    &+\sum_{i=1}^{6}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
+    &+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}\\
+    &+\widehat{\beta}_{\text{Male,Unmarried}}\cdot\mathbb{I}_{\text{Male}}\cdot\mathbb{I}_{\text{Unmarried}}(x)+\sum_{i=1}^{6}\widehat{\beta}_{\text{Male,Occupationi}}\cdot\mathbb{I}_{\text{Male}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)
+\end{align*}
 
 ```{r}
 #| label: interaction-new-2
@@ -1123,6 +1184,8 @@ print(detect_separation_model)
 
 ```
 
+ROC Curve Analysis & AUC Comparison:
+
 ```{r}
 #| label: fig-ROC-interaction-new-2
 #| fig-pos: H
@@ -1131,6 +1194,8 @@ print(detect_separation_model)
 #| fig-cap: ROC curve for model_new.2.interaction
 plot_roc_curve(model_new.2.interaction,data.new.2)
 ```
+
+Odds of the model：
 
 ```{r}
 #| label: fig-model-plot-new-2
@@ -1141,6 +1206,15 @@ plot_roc_curve(model_new.2.interaction,data.new.2)
 plot_model(model_new.2.interaction, show.values = TRUE,
            title = "", show.p = FALSE, value.offset = 0.5)
 ```
+
+For the ISCO-08 Model, consider the interaction:
+
+\begin{align*}
+    \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\mbox{Age}}\cdot\mbox{Age}+\widehat{\beta}_{\mbox{Low-Education}}\cdot\mathbb{I}_{\mbox{Low-Education}}(x)\\
+    &+\sum_{i=1}^{9}\widehat{\beta}_{\mbox{Occupation,i}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)+\widehat{\beta}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)\\
+    &+\widehat{\beta}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Male}}(x)+\widehat{\beta}_{\mbox{Hours-PW}}\cdot\mbox{Hours-PW}\\
+    &+\sum_{i=1}^{9}\widehat{\beta}_{\mbox{Unmarried,Occupationi}}\cdot\mathbb{I}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)
+\end{align*}
 
 ```{r}
 #| label: interaction-new-3
@@ -1166,6 +1240,8 @@ print(detect_separation_model)
 
 ```
 
+ROC Curve Analysis & AUC Comparison:
+
 ```{r}
 #| label: fig-ROC-interaction-new-3
 #| fig-pos: H
@@ -1174,6 +1250,8 @@ print(detect_separation_model)
 #| fig-cap: ROC curve for model_new.3.interaction
 plot_roc_curve(model_new.3.interaction,data.new.3)
 ```
+
+Odds of the model：
 
 ```{r}
 #| label: fig-model-plot-new-3
@@ -1302,47 +1380,10 @@ print(paste("Accuracy7:", round(accuracy7, 3)))
 #0.816
 ```
 
-The AIC of `model_new.2.interaction` is the smallest, indicating the best model fit. Additionally, `model_new.2.interaction` achieves the highest AUC of 0.868, demonstrating the strongest ability to classify high-income (\>50K) and low-income (\<=50K) groups.
+The AIC of `model_new.2.interaction` is the smallest, which is 1084.720, indicating the best model fit. Additionally, `model_new.2.interaction` achieves the highest AUC of 0.868, demonstrating the strongest ability to classify high-income (\>50K) and low-income (\<=50K) groups.
 
 ```{r}
 #|label: AIC
 AIC(stepAIC_model, stepAIC_model_new.1,stepAIC_model_new.2,stepAIC_model_new.3,model_new.1.interaction,model_new.2.interaction,model_new.3.interaction)
-
-```
-
-The X-axis (0 → 1) represents the predicted probability, where 0 indicates low income, 1 indicates high income, and 0.5 represents model uncertainty. The Y-axis (residuals) represents the prediction error. A residual value close to 0 indicates that the predicted result is close to the actual value, with a small error, while a residual value far from 0 indicates a larger discrepancy between the predicted and actual values.\
-At points where the X-axis is close to 0 and 1, residual values are larger, indicating higher prediction errors in these regions. However, this is a normal phenomenon in logistic regression. When the X-axis is near 0.5, the residual values are smaller, suggesting that the model fits better in the middle probability range.
-
-```{r}
-#| label: fig-Residuals-Fitted_Values
-#| fig-pos: H
-#| fig-width: 6
-#| fig-height: 4
-#| fig-cap: Residuals vs Fitted Values.
-fitted_values <- fitted(model_new.2.interaction)
-residuals_dev <- residuals(model_new.2.interaction)
-plot(fitted_values, residuals_dev, 
-     main = "Residuals vs Fitted Values", 
-     xlab = "Fitted Values", 
-     ylab = "Residuals", 
-     col = "blue", pch = 20)
-
-abline(h = 0, col = "red", lwd = 2, lty = 2)
-
-```
-
-The residuals follow a normal distribution in the middle region but deviate from the diagonal line at both ends, especially on the right side. However, slight tail deviations are common in logistic regression.
-
-```{r}
-#| label: fig-QQ
-#| fig-pos: H
-#| fig-width: 6
-#| fig-height: 4
-#| fig-cap: QQ Plot of Standardized Residuals.
-std_residuals <- stdres(model_new.2.interaction)
-qqnorm(std_residuals, 
-       main = "QQ Plot of Standardized Residuals", 
-       col = "blue", pch = 20)
-qqline(std_residuals, col = "red", lwd = 2)  
 
 ```
