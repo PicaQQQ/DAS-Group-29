@@ -166,12 +166,7 @@ result <- data %>%
   adorn_pct_formatting() %>%
   adorn_ns()
 
-gt_table <- gt(result)|>
-  tab_options(
-    table.width = pct(100),
-    table.font.size = pct( max(50, 100 - ncol(result) * 5) )
-  )
-gt_table
+result
 
 ```
 
@@ -222,12 +217,7 @@ result <- data %>%
   adorn_percentages() %>%
   adorn_pct_formatting() %>%
   adorn_ns()
-gt_table <- gt(result)|>
-  tab_options(
-    table.width = pct(100),
-    table.font.size = pct( max(50, 100 - ncol(result) * 5) )
-  )
-gt_table
+result
 ```
 
 ```{r}
