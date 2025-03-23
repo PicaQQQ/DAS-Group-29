@@ -498,13 +498,11 @@ Low-income group (\<=50K): The most common work hours are 40 hours per week, wit
 
 Fitting full model.
 
-
 \begin{align*}
 \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\sum_{i=1}^{14}\widehat{\beta}_{\text{Education,i}}\cdot\mathbb{I}_{\text{Education,i}}(x)\\
 &+\sum_{i=1}^{12}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\sum_{i=1}^{5}\widehat{\beta}_{\text{Marital-Status,i}}\cdot\mathbb{I}_{\text{Marital-Status,i}}(x)\\
 &+\sum_{i=1}^{31}\widehat{\beta}_{\text{Nationality,i}}\cdot\mathbb{I}_{\text{Nationality,i}}(x)+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hour-PW}}\cdot\text{Hours-PW}
 \end{align*}
-
 
 -   This means that estimates from the logistic regression model are for a change on the log-odds scale for income \>=50k in comparison to the response baseline income \<50k
 
@@ -527,13 +525,11 @@ print(detect_separation_full_model)
 
 Use the Forward-Backward selection of stepwise regression and check the separation :
 
-
 \begin{align*}
 \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\sum_{i=1}^{14}\widehat{\beta}_{\text{Education,i}}\cdot\mathbb{I}_{\text{Education,i}}(x)\\
 &+\sum_{i=1}^{12}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\sum_{i=1}^{5}\widehat{\beta}_{\text{Marital-Status,i}}\cdot\mathbb{I}_{\text{Marital-Status,i}}(x)\\
 &+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
 \end{align*}
-
 
 ```{r}
 #| label: glm_stepAIC_model
@@ -874,17 +870,21 @@ ggplot(data=data.new.3,aes(x=Income,group=Occupation))+
   labs(x="Whether larger than 50K",y="Proportion")
 ```
 
-The outcome of three classification cases：
+The International Standard Classification of Occupations (ISCO-08) is used to categorize occupations into structured groups based on job function and skill level. This classification allows for a globally standardized approach to analyzing income distribution by profession.
 
-Mental-Physical Model:
+Income Distribution Analysis After Merging:
 
+Category 1 (Managers) and Category 2 (Professionals) have the highest share of individuals earning \>50K, emphasizing that managerial and specialized roles offer better earnings. Category 5 (Service & Sales) and Category 6 (Agricultural & Fishery) exhibit the lowest proportion of high-income earners, indicating the financial constraints faced by these workers. Category 7 (Craft Workers) and Category 8 (Machine Operators) have an intermediate income distribution, suggesting that skilled manual labor provides moderate earnings.
+
+## The outcome of three classification cases
+
+### Mental-Physical Model:
 
 \begin{align*}
 \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
 &+\widehat{\beta}_{\text{Physical-Labor}}\cdot\mathbb{I}_{\text{Physical-Labor}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
 &+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
 \end{align*}
-
 
 ```{r}
 #| label: merge_model_check-1
@@ -901,15 +901,13 @@ detect_separation_model <- glm(Income ~ Age + Education +Sex+ Marital_Status +Oc
 print(detect_separation_model)
 ```
 
-PRC Model:
-
+### PRC Model:
 
 \begin{align*}
 \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
 &+\sum_{i=1}^{6}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
 &+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
 \end{align*}
-
 
 ```{r}
 #| label: merge_model_check-2
@@ -926,15 +924,13 @@ detect_separation_model <- glm(Income ~ Age + Education +Sex+ Marital_Status +Oc
 print(detect_separation_model)
 ```
 
-ISCO-08 Model:
-
+### ISCO-08 Model:
 
 \begin{align*}
     \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
     &+\sum_{i=1}^{9}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
     &+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
 \end{align*}
-
 
 ```{r}
 #| label: merge_model_check-3
@@ -951,17 +947,17 @@ detect_separation_model <- glm(Income ~ Age + Education +Sex+ Marital_Status +Oc
 print(detect_separation_model)
 ```
 
-The International Standard Classification of Occupations (ISCO-08) is used to categorize occupations into structured groups based on job function and skill level. This classification allows for a globally standardized approach to analyzing income distribution by profession.
+## Model Selection and Performance Comparison
 
-Income Distribution Analysis After Merging:
+The stepwise AIC model selection process was applied separately to datasets using different occupational classification methods (Mental vs. Physical Labor, PRC Job Classification, and ISCO-08). All models showed improvement in fitting compared to the full model, **but the best performance was observed with the PRC Job Classification.** Nationality was removed in the AIC-selected models, reinforcing the earlier observation that nationality has little impact on income prediction.
 
-Category 1 (Managers) and Category 2 (Professionals) have the highest share of individuals earning \>50K, emphasizing that managerial and specialized roles offer better earnings. Category 5 (Service & Sales) and Category 6 (Agricultural & Fishery) exhibit the lowest proportion of high-income earners, indicating the financial constraints faced by these workers. Category 7 (Craft Workers) and Category 8 (Machine Operators) have an intermediate income distribution, suggesting that skilled manual labor provides moderate earnings.
+Key Takeaways:
 
-Model Selection and Performance Comparison:
+-   PRC Job Classification provides a structured way to assess income distribution across occupations.
 
-The stepwise AIC model selection process was applied separately to datasets using different occupational classification methods (Mental vs. Physical Labor, PRC Job Classification, and ISCO-08). All models showed improvement in fitting compared to the full model, but the best performance was observed with the ISCO-08 classification. Nationality was removed in the AIC-selected models, reinforcing the earlier observation that nationality has little impact on income prediction.
+-   Category 1 (Senior Management) and Category 2 (Specialists & Technical Support) dominate the high-income group, while other categories are more likely to fall into lower income levels by comparison.
 
-Key Takeaways: ISCO-08 classification provides a structured way to assess income distribution across occupations. Managers and professionals dominate the high-income group, while service, sales, and agriculture workers struggle with lower wages. Machine operators and craft workers occupy a middle ground, earning more than service workers but less than professionals. The final model using ISCO-08 classification achieves a better balance between accuracy and interpretability, making it a robust choice for workforce and economic analysis.
+The final model based on the PRC Job Classification achieved the lowest AIC value, making it a robust choice for workforce and economic analysis.
 
 # Model Check
 
@@ -1100,13 +1096,11 @@ Key Takeaways: The ROC curve and AUC values help determine the best occupational
 
 For the Mental-Physical Model, consider the interaction:
 
-
 \begin{align*}
     \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
     &+\widehat{\beta}_{\text{Physical-Labor}}\cdot\mathbb{I}_{\text{Physical-Labor}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\&+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}\\
     &+\widehat{\beta}_{\text{Unmarrid,Age}}\cdot\text{Age}\cdot\mathbb{I}_{\text{Unmarried}}(x)+\widehat{\beta}_{\text{Unmarrid,Male}}\cdot\mathbb{I}_{\text{Male}}\cdot\mathbb{I}_{\text{Unmarried}}(x)
 \end{align*}
-
 
 ```{r}
 #| label: interaction-new-1
@@ -1157,14 +1151,12 @@ plot_model(model_new.1.interaction, show.values = TRUE,
 
 For the PRC Model, consider the interaction:
 
-
 \begin{align*}
     \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
     &+\sum_{i=1}^{6}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
     &+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}\\
     &+\widehat{\beta}_{\text{Male,Unmarried}}\cdot\mathbb{I}_{\text{Male}}\cdot\mathbb{I}_{\text{Unmarried}}(x)+\sum_{i=1}^{6}\widehat{\beta}_{\text{Male,Occupationi}}\cdot\mathbb{I}_{\text{Male}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)
 \end{align*}
-
 
 ```{r}
 #| label: interaction-new-2
@@ -1217,14 +1209,12 @@ plot_model(model_new.2.interaction, show.values = TRUE,
 
 For the ISCO-08 Model, consider the interaction:
 
-
 \begin{align*}
     \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\mbox{Age}}\cdot\mbox{Age}+\widehat{\beta}_{\mbox{Low-Education}}\cdot\mathbb{I}_{\mbox{Low-Education}}(x)\\
     &+\sum_{i=1}^{9}\widehat{\beta}_{\mbox{Occupation,i}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)+\widehat{\beta}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)\\
     &+\widehat{\beta}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Male}}(x)+\widehat{\beta}_{\mbox{Hours-PW}}\cdot\mbox{Hours-PW}\\
     &+\sum_{i=1}^{9}\widehat{\beta}_{\mbox{Unmarried,Occupationi}}\cdot\mathbb{I}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)
 \end{align*}
-
 
 ```{r}
 #| label: interaction-new-3
