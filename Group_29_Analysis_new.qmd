@@ -7,7 +7,6 @@ format:
     embed-resources: true
     code-tools: true
     code-overflow: wrap
-    math: mathjax
   pdf: default
 editor_options: 
   chunk_output_type: console
@@ -42,7 +41,6 @@ library(dplyr)
 library(GGally)
 library(ROCR)
 library(gt)
-library(kableExtra)
 ```
 
 ```{r}
@@ -386,12 +384,7 @@ result <- data %>%
   adorn_percentages() %>%
   adorn_pct_formatting() %>%
   adorn_ns()
-gt_table <- gt(result)|>
-  tab_options(
-    table.width = pct(100),
-    table.font.size = pct( max(50, 100 - ncol(result) * 5) )
-  )
-gt_table
+result
 ```
 
 ```{r}
@@ -505,7 +498,13 @@ Low-income group (\<=50K): The most common work hours are 40 hours per week, wit
 
 Fitting full model.
 
-$$\ln\left(\frac{p}{1 - p}\right)=\widehat{\alpha}+\widehat{\beta}_{\mbox{Age}}\cdot\mbox{Age}+\sum_{i=1}^{14}\widehat{\beta}_{\mbox{Education,i}}\cdot\mathbb{I}_{\mbox{Education,i}}(x)+\\+\sum_{i=1}^{12}\widehat{\beta}_{\mbox{Occupation,i}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)+\sum_{i=1}^{5}\widehat{\beta}_{\mbox{Marital_Status,i}}\cdot\mathbb{I}_{\mbox{Marital_Status,i}}(x)+\\+\sum_{i=1}^{31}\widehat{\beta}_{\mbox{Nationality,i}}\cdot\mathbb{I}_{\mbox{Nationality,i}}(x)+\widehat{\beta}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Male}}(x)+\widehat{\beta}_{\mbox{Hour_PW}}\cdot\mbox{Hours_PW}$$
+
+\begin{align*}
+\ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\sum_{i=1}^{14}\widehat{\beta}_{\text{Education,i}}\cdot\mathbb{I}_{\text{Education,i}}(x)\\
+&+\sum_{i=1}^{12}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\sum_{i=1}^{5}\widehat{\beta}_{\text{Marital-Status,i}}\cdot\mathbb{I}_{\text{Marital-Status,i}}(x)\\
+&+\sum_{i=1}^{31}\widehat{\beta}_{\text{Nationality,i}}\cdot\mathbb{I}_{\text{Nationality,i}}(x)+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hour-PW}}\cdot\text{Hours-PW}
+\end{align*}
+
 
 -   This means that estimates from the logistic regression model are for a change on the log-odds scale for income \>=50k in comparison to the response baseline income \<50k
 
@@ -528,10 +527,13 @@ print(detect_separation_full_model)
 
 Use the Forward-Backward selection of stepwise regression and check the separation :
 
-$$\ln\left(\frac{p}{1 - p}\right)=\widehat{\alpha}+\widehat{\beta}_{\mbox{Age}}\cdot\mbox{Age}+\sum_{i=1}^{14}\widehat{\beta}_{\mbox{Education,i}}\cdot\mathbb{I}_{\mbox{Education,i}}(x)+\\
-+\sum_{i=1}^{12}\widehat{\beta}_{\mbox{Occupation,i}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)+\sum_{i=1}^{5}\widehat{\beta}_{\mbox{Marital_Status,i}}\cdot\mathbb{I}_{\mbox{Marital_Status,i}}(x)+\\
-+\widehat{\beta}_{\mbox{Hour_PW}}\cdot\mbox{Hours_PW}
-$$
+
+\begin{align*}
+\ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\sum_{i=1}^{14}\widehat{\beta}_{\text{Education,i}}\cdot\mathbb{I}_{\text{Education,i}}(x)\\
+&+\sum_{i=1}^{12}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\sum_{i=1}^{5}\widehat{\beta}_{\text{Marital-Status,i}}\cdot\mathbb{I}_{\text{Marital-Status,i}}(x)\\
+&+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
+\end{align*}
+
 
 ```{r}
 #| label: glm_stepAIC_model
@@ -876,7 +878,13 @@ The outcome of three classification cases：
 
 Mental-Physical Model:
 
-$$\ln\left(\frac{p}{1 - p}\right)=\widehat{\alpha}+\widehat{\beta}_{\mbox{Age}}\cdot\mbox{Age}+\widehat{\beta}_{\mbox{Low_Education}}\cdot\mathbb{I}_{\mbox{Low_Education}}(x)+\widehat{\beta}_{\mbox{Physical_Labor}}\cdot\mathbb{I}_{\mbox{Physical_Labor}}(x)+\widehat{\beta}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)+\widehat{\beta}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Male}}(x)+\widehat{\beta}_{\mbox{Hour_PW}}\cdot\mbox{Hours_PW}$$
+
+\begin{align*}
+\ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
+&+\widehat{\beta}_{\text{Physical-Labor}}\cdot\mathbb{I}_{\text{Physical-Labor}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
+&+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
+\end{align*}
+
 
 ```{r}
 #| label: merge_model_check-1
@@ -895,7 +903,13 @@ print(detect_separation_model)
 
 PRC Model:
 
-$$\ln\left(\frac{p}{1 - p}\right)=\widehat{\alpha}+\widehat{\beta}_{\mbox{Age}}\cdot\mbox{Age}+\widehat{\beta}_{\mbox{Low_Education}}\cdot\mathbb{I}_{\mbox{Low_Education}}(x)+\\+\sum_{i=1}^{6}\widehat{\beta}_{\mbox{Occupation,i}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)+\widehat{\beta}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)+\\+\widehat{\beta}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Male}}(x)+\widehat{\beta}_{\mbox{Hour_PW}}\cdot\mbox{Hours_PW}$$
+
+\begin{align*}
+\ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
+&+\sum_{i=1}^{6}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
+&+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
+\end{align*}
+
 
 ```{r}
 #| label: merge_model_check-2
@@ -914,7 +928,13 @@ print(detect_separation_model)
 
 ISCO-08 Model:
 
-$$\ln\left(\frac{p}{1 - p}\right)=\widehat{\alpha}+\widehat{\beta}_{\mbox{Age}}\cdot\mbox{Age}+\widehat{\beta}_{\mbox{Low_Education}}\cdot\mathbb{I}_{\mbox{Low_Education}}(x)+\\+\sum_{i=1}^{9}\widehat{\beta}_{\mbox{Occupation,i}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)+\widehat{\beta}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)+\\+\widehat{\beta}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Male}}(x)+\widehat{\beta}_{\mbox{Hour_PW}}\cdot\mbox{Hours_PW}$$
+
+\begin{align*}
+    \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
+    &+\sum_{i=1}^{9}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
+    &+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}
+\end{align*}
+
 
 ```{r}
 #| label: merge_model_check-3
@@ -1080,7 +1100,13 @@ Key Takeaways: The ROC curve and AUC values help determine the best occupational
 
 For the Mental-Physical Model, consider the interaction:
 
-$$\ln\left(\frac{p}{1 - p}\right)=\widehat{\alpha}+\widehat{\beta}_{\mbox{Age}}\cdot\mbox{Age}+\widehat{\beta}_{\mbox{Low_Education}}\cdot\mathbb{I}_{\mbox{Low_Education}}(x)+\\+\widehat{\beta}_{\mbox{Physical_Labor}}\cdot\mathbb{I}_{\mbox{Physical_Labor}}(x)+\widehat{\beta}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)+\\+\widehat{\beta}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Male}}(x)+\widehat{\beta}_{\mbox{Hour_PW}}\cdot\mbox{Hours_PW}+\\+\widehat{\beta}_{\mbox{Unmarrid,Age}}\cdot\mbox{Age}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)+\widehat{\beta}_{\mbox{Unmarrid,Male}}\cdot\mathbb{I}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)$$
+
+\begin{align*}
+    \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
+    &+\widehat{\beta}_{\text{Physical-Labor}}\cdot\mathbb{I}_{\text{Physical-Labor}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\&+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}\\
+    &+\widehat{\beta}_{\text{Unmarrid,Age}}\cdot\text{Age}\cdot\mathbb{I}_{\text{Unmarried}}(x)+\widehat{\beta}_{\text{Unmarrid,Male}}\cdot\mathbb{I}_{\text{Male}}\cdot\mathbb{I}_{\text{Unmarried}}(x)
+\end{align*}
+
 
 ```{r}
 #| label: interaction-new-1
@@ -1131,7 +1157,14 @@ plot_model(model_new.1.interaction, show.values = TRUE,
 
 For the PRC Model, consider the interaction:
 
-$$\ln\left(\frac{p}{1 - p}\right)=\widehat{\alpha}+\widehat{\beta}_{\mbox{Age}}\cdot\mbox{Age}+\widehat{\beta}_{\mbox{Low_Education}}\cdot\mathbb{I}_{\mbox{Low_Education}}(x)+\\+\sum_{i=1}^{6}\widehat{\beta}_{\mbox{Occupation,i}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)+\widehat{\beta}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)+\\+\widehat{\beta}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Male}}(x)+\widehat{\beta}_{\mbox{Hour_PW}}\cdot\mbox{Hours_PW}+\\+\widehat{\beta}_{\mbox{Male,Unmarried}}\cdot\mathbb{I}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)+\sum_{i=1}^{6}\widehat{\beta}_{\mbox{Male,Occupationi}}\cdot\mathbb{I}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)$$
+
+\begin{align*}
+    \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\text{Age}}\cdot\text{Age}+\widehat{\beta}_{\text{Low-Education}}\cdot\mathbb{I}_{\text{Low-Education}}(x)\\
+    &+\sum_{i=1}^{6}\widehat{\beta}_{\text{Occupation,i}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)+\widehat{\beta}_{\text{Unmarried}}\cdot\mathbb{I}_{\text{Unmarried}}(x)\\
+    &+\widehat{\beta}_{\text{Male}}\cdot\mathbb{I}_{\text{Male}}(x)+\widehat{\beta}_{\text{Hours-PW}}\cdot\text{Hours-PW}\\
+    &+\widehat{\beta}_{\text{Male,Unmarried}}\cdot\mathbb{I}_{\text{Male}}\cdot\mathbb{I}_{\text{Unmarried}}(x)+\sum_{i=1}^{6}\widehat{\beta}_{\text{Male,Occupationi}}\cdot\mathbb{I}_{\text{Male}}\cdot\mathbb{I}_{\text{Occupation,i}}(x)
+\end{align*}
+
 
 ```{r}
 #| label: interaction-new-2
@@ -1184,7 +1217,14 @@ plot_model(model_new.2.interaction, show.values = TRUE,
 
 For the ISCO-08 Model, consider the interaction:
 
-$$\ln\left(\frac{p}{1 - p}\right)=\widehat{\alpha}+\widehat{\beta}_{\mbox{Age}}\cdot\mbox{Age}+\widehat{\beta}_{\mbox{Low_Education}}\cdot\mathbb{I}_{\mbox{Low_Education}}(x)+\\+\sum_{i=1}^{9}\widehat{\beta}_{\mbox{Occupation,i}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)+\widehat{\beta}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)\\++\widehat{\beta}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Male}}(x)+\widehat{\beta}_{\mbox{Hour_PW}}\cdot\mbox{Hours_PW}+\\+\sum_{i=1}^{9}\widehat{\beta}_{\mbox{Unmarried,Occupationi}}\cdot\mathbb{I}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)$$
+
+\begin{align*}
+    \ln\left(\frac{p}{1 - p}\right)=&\widehat{\alpha}+\widehat{\beta}_{\mbox{Age}}\cdot\mbox{Age}+\widehat{\beta}_{\mbox{Low-Education}}\cdot\mathbb{I}_{\mbox{Low-Education}}(x)\\
+    &+\sum_{i=1}^{9}\widehat{\beta}_{\mbox{Occupation,i}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)+\widehat{\beta}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Unmarried}}(x)\\
+    &+\widehat{\beta}_{\mbox{Male}}\cdot\mathbb{I}_{\mbox{Male}}(x)+\widehat{\beta}_{\mbox{Hours-PW}}\cdot\mbox{Hours-PW}\\
+    &+\sum_{i=1}^{9}\widehat{\beta}_{\mbox{Unmarried,Occupationi}}\cdot\mathbb{I}_{\mbox{Unmarried}}\cdot\mathbb{I}_{\mbox{Occupation,i}}(x)
+\end{align*}
+
 
 ```{r}
 #| label: interaction-new-3
